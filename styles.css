@@ -31,21 +31,27 @@ body {
 .booking-buttons {
     display: flex;
     justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
+    gap: 15px;
+    flex-wrap: nowrap;
 }
 
 .booking-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 12px 24px;
+    padding: 12px 20px;
     border-radius: 50px;
     text-decoration: none;
     font-weight: 600;
     font-size: 14px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+    max-width: 200px;
+    text-align: center;
 }
 
 .line-btn {
@@ -78,6 +84,10 @@ body {
     position: sticky;
     top: 60px;
     z-index: 999;
+}
+
+.navbar .container {
+    position: relative;
 }
 
 .navbar .container {
@@ -144,7 +154,8 @@ body {
     height: 3px;
     background-color: #333;
     margin: 3px 0;
-    transition: 0.3s;
+    transition: all 0.3s ease;
+    transform-origin: center;
 }
 
 /* 主要橫幅 */
@@ -651,11 +662,60 @@ body {
 /* 響應式設計 */
 @media (max-width: 768px) {
     .nav-menu {
-        display: none;
+        display: flex;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: white;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        padding: 20px 0;
+        border-top: 1px solid #e2e8f0;
+        flex-direction: column;
+        gap: 0;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-20px);
+        transition: all 0.3s ease;
+    }
+    
+    .nav-menu.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+    
+    .nav-menu li {
+        width: 100%;
+        text-align: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .nav-menu li:last-child {
+        border-bottom: none;
+    }
+    
+    .nav-menu a {
+        display: block;
+        padding: 15px 20px;
+        font-size: 16px;
     }
     
     .nav-toggle {
         display: flex;
+    }
+    
+    .nav-toggle.active span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+    
+    .nav-toggle.active span:nth-child(2) {
+        opacity: 0;
+    }
+    
+    .nav-toggle.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -6px);
     }
     
     .hero .container {
@@ -677,8 +737,17 @@ body {
     }
     
     .booking-buttons {
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
+        gap: 10px;
+        padding: 0 10px;
+    }
+    
+    .booking-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        max-width: none;
+        flex: 1;
     }
     
     .hero-buttons {
@@ -723,5 +792,20 @@ body {
     .btn {
         padding: 12px 24px;
         font-size: 14px;
+    }
+    
+    .booking-buttons {
+        gap: 8px;
+        padding: 0 5px;
+    }
+    
+    .booking-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        gap: 6px;
+    }
+    
+    .booking-btn i {
+        font-size: 12px;
     }
 }

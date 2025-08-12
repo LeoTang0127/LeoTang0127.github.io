@@ -34,6 +34,23 @@ if (navToggle && navMenu) {
         navMenu.classList.toggle('active');
         navToggle.classList.toggle('active');
     });
+    
+    // 點擊導航項目後自動關閉菜單
+    const navLinks = navMenu.querySelectorAll('a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            navMenu.classList.remove('active');
+            navToggle.classList.remove('active');
+        });
+    });
+    
+    // 點擊外部區域關閉菜單
+    document.addEventListener('click', function(e) {
+        if (!navToggle.contains(e.target) && !navMenu.contains(e.target)) {
+            navMenu.classList.remove('active');
+            navToggle.classList.remove('active');
+        }
+    });
 }
 
 // 表單提交處理
