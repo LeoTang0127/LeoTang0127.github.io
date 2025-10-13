@@ -53,8 +53,8 @@ if (navToggle && navMenu) {
     });
 }
 // ★ 設定 LINE 官方帳號
-const LINE_OA_ID = "@805pmliw";                 // 例： "@nadotong"；若暫時沒有就留空字串 ""
-const LINE_SHORT_URL = "https://lin.ee/tr2Td6C";  // 你現在的短連結
+const LINE_OA_ID = "@805pmliw";                 // 你的 LINE OA Basic ID
+const LINE_SHORT_URL = "https://lin.ee/tr2Td6C"; // 備用短連結
 
 // 表單提交處理（加入 LINE 導流）
 const contactForm = document.querySelector('.contact-form form');
@@ -62,37 +62,35 @@ if (contactForm) {
     contactForm.addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        // 取值（沿用你原本的選取方式）
+        // 取值
         const name = this.querySelector('input[type="text"]')?.value?.trim() || "";
         const phone = this.querySelector('input[type="tel"]')?.value?.trim() || "";
         const email = this.querySelector('input[type="email"]')?.value?.trim() || "";
         const service = this.querySelector('select')?.value || "";
         const message = this.querySelector('textarea')?.value || "";
 
-        // 驗證（沿用你的邏輯）
+        // 驗證
         if (!name || !phone || !service) {
             showNotification('請填寫必填欄位', 'error');
             return;
         }
 
-        // 組預填訊息（可依需求加欄位）
-        const lines = [
+        // 組預填訊息
+        const msg = [
             '哪都通預約',
             '姓名：' + name,
             '電話：' + phone,
             email ? ('Email：' + email) : '',
             '方案：' + service,
             '備註：' + message
-        ].filter(Boolean);
-        const msg = lines.join('\n');
+        ].filter(Boolean).join('\n');
 
-        // 決定導向 URL
+        // 目標 URL（正確：@ 需編碼為 %40，末尾加 "/?"，再接 encodeURIComponent(msg)）
         let url;
         if (LINE_OA_ID) {
-            // 走官方 oaMessage：會打開與你的 OA 對話並把訊息預填
-            url = 'https://line.me/R/oaMessage/%40805pmliw/?${1}' + encodeURIComponent(LINE_OA_ID) + '/?' + encodeURIComponent(msg);
+            const base = 'https://line.me/R/oaMessage/' + encodeURIComponent(LINE_OA_ID) + '/?';
+            url = base + encodeURIComponent(msg);
         } else {
-            // 沒有 OA ID → 用你的短連結，並嘗試把訊息複製到剪貼簿
             url = LINE_SHORT_URL;
             try {
                 await navigator.clipboard.writeText(msg);
@@ -102,10 +100,10 @@ if (contactForm) {
             }
         }
 
-        // 導向 LINE（手機會開 App，桌機會開 Web/提示）
+        // 導向 LINE
         window.location.href = url;
 
-        // 清空表單（保留你的行為）
+        // 清空
         this.reset();
     });
 }
