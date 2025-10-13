@@ -34,7 +34,7 @@ if (navToggle && navMenu) {
         navMenu.classList.toggle('active');
         navToggle.classList.toggle('active');
     });
-    
+
     // 點擊導航項目後自動關閉菜單
     const navLinks = navMenu.querySelectorAll('a');
     navLinks.forEach(link => {
@@ -43,7 +43,7 @@ if (navToggle && navMenu) {
             navToggle.classList.remove('active');
         });
     });
-    
+
     // 點擊外部區域關閉菜單
     document.addEventListener('click', function(e) {
         if (!navToggle.contains(e.target) && !navMenu.contains(e.target)) {
@@ -52,34 +52,65 @@ if (navToggle && navMenu) {
         }
     });
 }
+// ★ 設定 LINE 官方帳號
+const LINE_OA_ID = "@805pmliw";                 // 例： "@nadotong"；若暫時沒有就留空字串 ""
+const LINE_SHORT_URL = "https://lin.ee/tr2Td6C";  // 你現在的短連結
 
-// 表單提交處理
+// 表單提交處理（加入 LINE 導流）
 const contactForm = document.querySelector('.contact-form form');
 if (contactForm) {
-    contactForm.addEventListener('submit', function(e) {
+    contactForm.addEventListener('submit', async function (e) {
         e.preventDefault();
-        
-        // 獲取表單數據
-        const formData = new FormData(this);
-        const name = this.querySelector('input[type="text"]').value;
-        const phone = this.querySelector('input[type="tel"]').value;
-        const email = this.querySelector('input[type="email"]').value;
-        const service = this.querySelector('select').value;
-        const message = this.querySelector('textarea').value;
-        
-        // 簡單驗證
+
+        // 取值（沿用你原本的選取方式）
+        const name = this.querySelector('input[type="text"]')?.value?.trim() || "";
+        const phone = this.querySelector('input[type="tel"]')?.value?.trim() || "";
+        const email = this.querySelector('input[type="email"]')?.value?.trim() || "";
+        const service = this.querySelector('select')?.value || "";
+        const message = this.querySelector('textarea')?.value || "";
+
+        // 驗證（沿用你的邏輯）
         if (!name || !phone || !service) {
             showNotification('請填寫必填欄位', 'error');
             return;
         }
-        
-        // 模擬表單提交
-        showNotification('預約表單已送出！我們會盡快與您聯絡。', 'success');
-        
-        // 清空表單
+
+        // 組預填訊息（可依需求加欄位）
+        const lines = [
+            '哪都通預約',
+            '姓名：' + name,
+            '電話：' + phone,
+            email ? ('Email：' + email) : '',
+            '方案：' + service,
+            '備註：' + message
+        ].filter(Boolean);
+        const msg = lines.join('\n');
+
+        // 決定導向 URL
+        let url;
+        if (LINE_OA_ID) {
+            // 走官方 oaMessage：會打開與你的 OA 對話並把訊息預填
+            url = 'https://line.me/R/oaMessage/%40805pmliw/?${1}' + encodeURIComponent(LINE_OA_ID) + '/?' + encodeURIComponent(msg);
+        } else {
+            // 沒有 OA ID → 用你的短連結，並嘗試把訊息複製到剪貼簿
+            url = LINE_SHORT_URL;
+            try {
+                await navigator.clipboard.writeText(msg);
+                showNotification('已複製預約內容，將為您開啟 LINE，請貼上後送出。', 'success');
+            } catch {
+                showNotification('將為您開啟 LINE，請把以下內容貼上並送出：\n' + msg, 'info');
+            }
+        }
+
+        // 導向 LINE（手機會開 App，桌機會開 Web/提示）
+        window.location.href = url;
+
+        // 清空表單（保留你的行為）
         this.reset();
     });
 }
+
+
 
 // 通知系統
 function showNotification(message, type = 'info') {
@@ -88,7 +119,7 @@ function showNotification(message, type = 'info') {
     if (existingNotification) {
         existingNotification.remove();
     }
-    
+
     // 創建新通知
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
@@ -98,7 +129,7 @@ function showNotification(message, type = 'info') {
             <button class="notification-close">&times;</button>
         </div>
     `;
-    
+
     // 添加樣式
     notification.style.cssText = `
         position: fixed;
@@ -113,7 +144,7 @@ function showNotification(message, type = 'info') {
         max-width: 400px;
         animation: slideIn 0.3s ease;
     `;
-    
+
     // 添加動畫樣式
     const style = document.createElement('style');
     style.textContent = `
@@ -127,14 +158,14 @@ function showNotification(message, type = 'info') {
                 opacity: 1;
             }
         }
-        
+
         .notification-content {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 15px;
         }
-        
+
         .notification-close {
             background: none;
             border: none;
@@ -150,22 +181,22 @@ function showNotification(message, type = 'info') {
             border-radius: 50%;
             transition: background-color 0.3s ease;
         }
-        
+
         .notification-close:hover {
             background-color: rgba(255, 255, 255, 0.2);
         }
     `;
     document.head.appendChild(style);
-    
+
     // 添加到頁面
     document.body.appendChild(notification);
-    
+
     // 關閉按鈕事件
     const closeBtn = notification.querySelector('.notification-close');
     closeBtn.addEventListener('click', () => {
         notification.remove();
     });
-    
+
     // 自動關閉
     setTimeout(() => {
         if (notification.parentNode) {
@@ -177,11 +208,11 @@ function showNotification(message, type = 'info') {
 // 滾動動畫
 function animateOnScroll() {
     const elements = document.querySelectorAll('.service-card, .pricing-card, .contact-item');
-    
+
     elements.forEach(element => {
         const elementTop = element.getBoundingClientRect().top;
         const elementVisible = 150;
-        
+
         if (elementTop < window.innerHeight - elementVisible) {
             element.style.opacity = '1';
             element.style.transform = 'translateY(0)';
@@ -196,7 +227,7 @@ window.addEventListener('load', animateOnScroll);
 // 為動畫元素添加初始樣式
 document.addEventListener('DOMContentLoaded', function() {
     const animatedElements = document.querySelectorAll('.service-card, .pricing-card, .contact-item');
-    
+
     animatedElements.forEach(element => {
         element.style.opacity = '0';
         element.style.transform = 'translateY(30px)';
@@ -209,7 +240,7 @@ document.querySelectorAll('.booking-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const type = this.classList.contains('line-btn') ? 'LINE' : '電話';
         console.log(`${type}預約按鈕被點擊`);
-        
+
         // 這裡可以添加Google Analytics或其他追蹤代碼
         if (typeof gtag !== 'undefined') {
             gtag('event', 'booking_button_click', {
@@ -223,14 +254,14 @@ document.querySelectorAll('.booking-btn').forEach(btn => {
 // 價格卡片懸停效果增強
 document.querySelectorAll('.pricing-card').forEach(card => {
     card.addEventListener('mouseenter', function() {
-        this.style.transform = this.classList.contains('featured') 
-            ? 'scale(1.05) translateY(-10px)' 
+        this.style.transform = this.classList.contains('featured')
+            ? 'scale(1.05) translateY(-10px)'
             : 'translateY(-10px)';
     });
-    
+
     card.addEventListener('mouseleave', function() {
-        this.style.transform = this.classList.contains('featured') 
-            ? 'scale(1.05)' 
+        this.style.transform = this.classList.contains('featured')
+            ? 'scale(1.05)'
             : 'translateY(0)';
     });
 });
@@ -241,7 +272,7 @@ document.querySelectorAll('.service-card').forEach(card => {
         this.style.transform = 'translateY(-10px)';
         this.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
     });
-    
+
     card.addEventListener('mouseleave', function() {
         this.style.transform = 'translateY(0)';
         this.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.05)';
@@ -253,7 +284,7 @@ document.querySelectorAll('.nav-menu a').forEach(link => {
     link.addEventListener('mouseenter', function() {
         this.style.color = '#0072ff';
     });
-    
+
     link.addEventListener('mouseleave', function() {
         this.style.color = '#333';
     });
@@ -264,11 +295,11 @@ window.addEventListener('load', function() {
     // 添加載入動畫
     document.body.style.opacity = '0';
     document.body.style.transition = 'opacity 0.5s ease';
-    
+
     setTimeout(() => {
         document.body.style.opacity = '1';
     }, 100);
-    
+
     // 檢查表單驗證
     const requiredFields = document.querySelectorAll('input[required], select[required]');
     requiredFields.forEach(field => {
@@ -304,9 +335,9 @@ function createScrollToTopButton() {
         z-index: 1000;
         box-shadow: 0 4px 15px rgba(0, 114, 255, 0.3);
     `;
-    
+
     document.body.appendChild(scrollBtn);
-    
+
     // 滾動事件
     window.addEventListener('scroll', function() {
         if (window.scrollY > 300) {
@@ -317,7 +348,7 @@ function createScrollToTopButton() {
             scrollBtn.style.visibility = 'hidden';
         }
     });
-    
+
     // 點擊事件
     scrollBtn.addEventListener('click', function() {
         window.scrollTo({
@@ -325,13 +356,13 @@ function createScrollToTopButton() {
             behavior: 'smooth'
         });
     });
-    
+
     // 懸停效果
     scrollBtn.addEventListener('mouseenter', function() {
         this.style.transform = 'translateY(-3px)';
         this.style.boxShadow = '0 6px 20px rgba(0, 114, 255, 0.4)';
     });
-    
+
     scrollBtn.addEventListener('mouseleave', function() {
         this.style.transform = 'translateY(0)';
         this.style.boxShadow = '0 4px 15px rgba(0, 114, 255, 0.3)';
