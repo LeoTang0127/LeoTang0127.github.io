@@ -199,11 +199,85 @@
             cursor: pointer;
         }
 
-        @media (max-width: 720px) {
-            .board {
-                grid-template-columns: 1fr;
-            }
-        }
+      @media (max-width: 720px) {
+    body {
+        align-items: flex-start;
+    }
+
+    .game-container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        min-height: 100vh;
+        box-shadow: none;
+        padding: 10px 6px 14px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .title {
+        font-size: 18px;
+    }
+
+    .stats {
+        width: 100%;
+        justify-content: space-between;
+        gap: 4px;
+        font-size: 11px;
+    }
+
+    .stats span {
+        padding: 2px 6px;
+    }
+
+    .board {
+        /* ✅ 手機也維持左右兩張圖 */
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .image-wrapper {
+        min-height: 0;          /* 高度交給圖片決定，不會裁切 */
+        border-radius: 10px;
+    }
+
+    .image-label {
+        font-size: 11px;
+        padding: 3px 7px;
+    }
+
+    .footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .message {
+        font-size: 12px;
+    }
+
+    .btn-row {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 4px;
+    }
+
+    button {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    select#langSelect {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -635,3 +709,4 @@
     </script>
 </body>
 </html>
+
