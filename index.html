@@ -2,267 +2,185 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>找不同 (完美適配版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>找不同 (最終修復版)</title>
     <style>
         * {
             box-sizing: border-box;
         }
 
         body {
-            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #ffe7f0, #e6f3ff);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f0f4f8;
             margin: 0;
-            /* 預設佔滿全螢幕，防止多餘捲動 */
+            padding: 0;
+            /* 使用 svh 確保扣除手機網址列 */
+            height: 100svh; 
             width: 100vw;
-            height: 100vh;
-            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden; /* 禁止整個頁面捲動 */
         }
 
         .game-container {
-            background: #ffffffcc;
-            border-radius: 16px;
-            padding: 10px;
-            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+            background: white;
             width: 100%;
-            max-width: 1000px;
-            /* 讓容器成為 Flexbox，方便分配上下空間 */
+            height: 100%;
             display: flex;
             flex-direction: column;
-            height: 95vh; /* 稍微留一點邊 */
-            transition: all 0.3s ease;
+            padding: 8px;
+            position: relative;
         }
 
-        /* === 頂部區域 === */
+        /* === 頭部 (Header) === */
         .header {
+            flex-shrink: 0; /* 禁止壓縮 */
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            gap: 8px;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
             margin-bottom: 8px;
-            flex-shrink: 0; /* 禁止壓縮 header */
+            height: 40px; /* 給定固定高度 */
         }
 
-        .title {
-            font-size: 18px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .title { font-weight: bold; font-size: 16px; }
+        .stats { font-size: 13px; display: flex; gap: 8px; }
 
-        .pill {
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: #fff7d1;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        .stats {
-            display: flex;
-            gap: 6px;
-            font-size: 13px;
-            align-items: center;
-        }
-
-        .stats span {
-            padding: 3px 8px;
-            border-radius: 999px;
-            background: #f3f6ff;
-            white-space: nowrap;
-        }
-
-        /* === 遊戲主畫面 (Board) === */
+        /* === 遊戲區 (Board) === */
         .board {
-            /* 佔據剩餘的所有垂直空間 */
-            flex: 1; 
-            min-height: 0; /* 關鍵！允許 flex 子元素小於內容高度 */
+            flex: 1; /* 佔滿剩餘空間 */
+            min-height: 0; /* ❗關鍵：允許 Flex 子元素縮小 */
             display: flex;
-            /* 預設電腦版：左右排 */
-            flex-direction: row;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             gap: 10px;
+            width: 100%;
             position: relative;
         }
 
         .image-wrapper {
             position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid #f0e2ff;
-            background: #000;
-            /* 讓 wrapper 的大小完全由圖片或父容器決定 */
+            /* 預設為彈性空間 */
+            flex: 1; 
             display: flex;
             justify-content: center;
             align-items: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
         }
 
         .image-inner {
             position: relative;
+            display: inline-block;
             line-height: 0;
-            display: block;
         }
 
         .game-img {
             display: block;
-            object-fit: contain; /* 保持比例完整顯示 */
+            object-fit: contain;
         }
 
-        /* 標記點與標籤 */
-        .image-label {
-            position: absolute;
-            top: 6px;
-            left: 8px;
-            padding: 3px 8px;
-            border-radius: 999px;
-            background: #ffffffdd;
-            font-size: 12px;
-            pointer-events: none;
-            z-index: 10;
-        }
-
+        /* 標記點 */
         .marker {
             position: absolute;
-            width: 40px; /* 稍微縮小一點標記 */
-            height: 40px;
+            width: 30px; height: 30px;
+            border: 3px solid red;
             border-radius: 50%;
-            border: 3px solid #ff6b6b;
-            box-shadow: 0 0 0 3px #ffffffbb;
-            pointer-events: none;
             transform: translate(-50%, -50%);
-            animation: pop 0.2s ease-out;
-            z-index: 20;
+            pointer-events: none;
+            box-shadow: 0 0 0 2px white;
         }
 
-        @keyframes pop { from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
-        .image-wrapper.hit { animation: hitFlash 0.25s ease-out; }
-        @keyframes hitFlash { from { box-shadow: 0 0 0 0 rgba(255, 183, 197, 0.8); } to { box-shadow: 0 0 0 14px rgba(255, 183, 197, 0); } }
-
-        /* === 底部區域 === */
+        /* === 底部 (Footer) === */
         .footer {
-            margin-top: 8px;
+            flex-shrink: 0; /* 禁止壓縮 */
+            height: 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            flex-shrink: 0; /* 禁止壓縮 footer */
-        }
-
-        .message {
-            font-size: 13px;
-            font-weight: 500;
-            color: #444;
-        }
-
-        .btn-row {
-            display: flex;
-            gap: 6px;
+            border-top: 1px solid #eee;
+            padding-top: 6px;
+            margin-top: 6px;
         }
 
         button {
-            border: none;
-            border-radius: 999px;
-            padding: 6px 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            background: #f8f9fa;
             font-size: 12px;
-            cursor: pointer;
-            background: #ffd8e8;
-            white-space: nowrap;
         }
-        button.secondary { background: #e7f5ff; }
 
-        /* ========================================= */
-        /* 📱 1. 手機直向 (Portrait) -> 上下堆疊 */
-        /* ========================================= */
-        @media (max-width: 768px) and (orientation: portrait) {
+        /* ================================================= */
+        /* 📱 模式 1：手機直向 (Portrait) -> 上下捲動模式 */
+        /* ================================================= */
+        @media (orientation: portrait) {
             body {
-                height: auto;
-                min-height: 100vh;
-                overflow-y: auto; /* 允許直向捲動 */
-                align-items: flex-start; /* 從頂部開始 */
+                height: auto; /* 解除高度限制 */
+                min-height: 100svh;
+                overflow-y: auto; /* 允許捲動 */
+                display: block;
             }
 
             .game-container {
-                height: auto; /* 取消固定高度，隨內容長高 */
-                min-height: 100vh;
-                border-radius: 0;
-                padding: 12px;
+                height: auto;
+                min-height: 100svh;
             }
 
             .board {
-                flex-direction: column; /* 改為上下排 */
-                flex: none; /* 取消彈性，由內容撐開 */
-                gap: 12px;
+                flex-direction: column; /* 上下排 */
+                height: auto;
+                flex: none; /* 取消彈性 */
             }
 
             .image-wrapper {
                 width: 100%; /* 寬度滿版 */
-                height: auto;
+                height: auto; /* 高度隨圖片 */
+                flex: none;
+                margin-bottom: 10px;
             }
 
             .game-img {
-                width: 100%; /* 圖片隨寬度縮放 */
+                width: 100%; /* 圖片撐滿寬度 */
                 height: auto;
-                max-height: none;
+            }
+        }
+
+        /* ================================================= */
+        /* 📱 模式 2：手機橫向 (Landscape) -> 強制並排不捲動 */
+        /* ================================================= */
+        @media (orientation: landscape) {
+            /* 這裡不需額外設定 body，沿用預設的 overflow: hidden */
+
+            .game-container {
+                padding: 4px 10px; /* 減少邊距 */
             }
 
             .header, .footer {
-                flex-direction: column;
-                align-items: stretch;
+                height: 30px; /* 壓縮上下高度 */
+                margin: 2px 0;
+                font-size: 12px;
             }
-            
-            .stats { justify-content: space-between; }
-            .btn-row { justify-content: space-between; }
-            .btn-row button { flex: 1; text-align: center; }
-        }
-
-        /* ========================================= */
-        /* 📱 2. 手機橫向 (Landscape) -> 左右並排 (強制塞入一頁) */
-        /* ========================================= */
-        @media (max-height: 600px) and (orientation: landscape) {
-            body {
-                padding: 0;
-                height: 100vh;
-                overflow: hidden; /* 禁止捲動 */
-                align-items: center;
-            }
-
-            .game-container {
-                width: 100%;
-                height: 100%; /* 佔滿螢幕高度 */
-                border-radius: 0;
-                padding: 4px 10px; /* 縮小邊距 */
-            }
-
-            .header {
-                margin-bottom: 4px;
-            }
-            .title { font-size: 14px; }
-            .pill { padding: 2px 6px; font-size: 11px; }
-            .stats { font-size: 11px; }
-            .stats span { padding: 2px 6px; }
 
             .board {
-                /* 核心：左右排 */
-                flex-direction: row; 
-                gap: 10px;
-                /* 確保 board 佔滿中間所有空間 */
-                height: 100%; 
-                width: 100%;
+                flex-direction: row; /* ❗左右並排 */
+                align-items: center;
+                height: 100%; /* 撐滿中間區域 */
             }
 
             .image-wrapper {
-                /* 這裡最重要：限制高度，而不是寬度 */
-                height: 100%;       /* 盡量佔滿 Board 的高度 */
+                /* ❗重點中的重點： */
+                height: 100%;       /* 高度撐滿父容器 */
                 width: auto;        /* 寬度自動 */
-                aspect-ratio: auto; /* 避免 wrapper 被強制變形 */
-                flex: 0 1 auto;     /* 允許縮小 */
                 background: transparent;
-                border: none;       /* 橫向拿掉邊框省空間 */
+                border: none;
+                
+                /* 雙重保險：最大寬度設為螢幕的一半減去一點間隙 */
+                max-width: 48vw; 
             }
 
             .image-inner {
@@ -271,284 +189,174 @@
             }
 
             .game-img {
-                /* 強制圖片高度跟隨父容器 (也就是螢幕高度) */
-                height: 100%; 
-                width: auto;  /* 寬度自動調整，保持比例 */
-                max-width: 100%; /* 但也不要超出去 */
+                /* 讓圖片高度 100% 貼合容器高度 */
+                height: 100%;
+                width: auto; 
+                
+                /* 再次保險：寬度絕對不能超過螢幕一半 */
+                max-width: 100%; 
             }
 
-            /* 隱藏遮擋視線的元素 */
-            .image-label { display: none; }
-
-            .footer { margin-top: 4px; }
-            .message { font-size: 11px; }
-            button { padding: 4px 8px; font-size: 11px; }
+            /* 隱藏佔空間的元素 */
+            .title span:first-child { display: none; } /* 隱藏 emoji */
+            #labelLeft, #labelRight { display: none; } /* 隱藏圖片標籤 */
         }
-
     </style>
 </head>
 <body>
     <div class="game-container">
         <div class="header">
             <div class="title">
-                <span>🌟</span>
-                <span class="pill" id="levelName">L1</span>
+                <span>🌟</span> 找不同 <span style="background:#eee; padding:2px 6px; border-radius:10px; font-size:12px" id="levelName">L1</span>
             </div>
             <div class="stats">
-                <span>⏱ <strong id="time">120</strong></span>
-                <span>✅ <strong id="found">0</strong>/<span id="total">5</span></span>
-                <select id="levelSelect">
-                    <option value="0">1</option>
-                    <option value="1">2</option>
-                    <option value="2">3</option>
-                </select>
+                <span>⏱ <b id="time">120</b></span>
+                <span>✅ <b id="found">0</b>/<span id="total">5</span></span>
+                <select id="levelSelect"><option value="0">1</option><option value="1">2</option><option value="2">3</option></select>
             </div>
         </div>
 
         <div class="board">
             <div class="image-wrapper">
                 <div class="image-inner" id="image-left">
-                    <img id="image-left-img" class="game-img" alt="原圖">
-                    <span class="image-label" id="labelLeft">原圖</span>
+                    <img id="image-left-img" class="game-img" src="" alt="Left">
                 </div>
             </div>
-
             <div class="image-wrapper">
                 <div class="image-inner" id="image-right">
-                    <img id="image-right-img" class="game-img" alt="修改版">
-                    <span class="image-label" id="labelRight">點擊不同</span>
+                    <img id="image-right-img" class="game-img" src="" alt="Right">
                 </div>
             </div>
         </div>
 
         <div class="footer">
-            <div class="message" id="message"></div>
-            <div class="btn-row">
-                <select id="langSelect">
-                    <option value="zh">中</option>
-                    <option value="en">En</option>
-                </select>
-                <button id="btnHint" class="secondary">提示</button>
-                <button id="btnRestart">重來</button>
-                <button id="btnShowAll" class="secondary">解答</button>
-            </div>
+            <div id="message" style="flex:1; font-size:12px; color:#666;">開始遊戲</div>
+            <button id="btnHint">提示</button>
+            <button id="btnRestart" style="margin-left:5px;">重來</button>
+            <button id="btnShowAll" style="margin-left:5px;">解答</button>
         </div>
     </div>
 
     <script>
-        // === 遊戲邏輯維持不變 ===
+        // === 遊戲資料 ===
         const levels = [
-            {
-                id: 1,
-                titleZh: "L1：熊熊",
-                originalImage: "S__52166671.jpg",
-                diffImage: "S__52166671_1.png",
-                differences: [
-                    { x: 0.5675, y: 0.3207, radius: 0.0859, hintZh: "手套變紫色", hintEn: "Purple glove" },
-                    { x: 0.4029, y: 0.2252, radius: 0.0859, hintZh: "帽子多了星星", hintEn: "Star on hat" },
-                    { x: 0.7622, y: 0.2259, radius: 0.0859, hintZh: "氣球棒變黑", hintEn: "Black stick tip" },
-                    { x: 0.2641, y: 0.9150, radius: 0.0859, hintZh: "多了紅色鞋帶", hintEn: "Red shoelace" },
-                    { x: 0.4716, y: 0.8720, radius: 0.0859, hintZh: "左邊圍欄不見", hintEn: "Missing fence" }
-                ]
-            },
-            {
-                id: 2,
-                titleZh: "L2：Kuromi",
-                originalImage: "S__52166670.jpg",
-                diffImage: "S__52166670_1.jpg",
-                differences: [
-                    { x: 0.4018, y: 0.8750, radius: 0.0938, hintZh: "少一顆扣子", hintEn: "Missing button" },
-                    { x: 0.6096, y: 0.8584, radius: 0.0938, hintZh: "地板亮點變暗", hintEn: "Darker floor spot" },
-                    { x: 0.6940, y: 0.2920, radius: 0.0938, hintZh: "右眼線條不同", hintEn: "Right eye outline" },
-                    { x: 0.5612, y: 0.0254, radius: 0.0938, hintZh: "背景白線消失", hintEn: "Missing background line" },
-                    { x: 0.6175, y: 0.1641, radius: 0.0938, hintZh: "髮圈有紅點", hintEn: "Red dot on hair tie" }
-                ]
-            },
-            {
-                id: 3,
-                titleZh: "L3：洗車",
-                originalImage: "S__52166669.jpg",
-                diffImage: "S__52166669_1.jpg",
-                differences: [
-                    { x: 0.1066, y: 0.3928, radius: 0.0859, hintZh: "車頭燈少反光", hintEn: "Missing reflection" },
-                    { x: 0.3843, y: 0.3627, radius: 0.0859, hintZh: "車窗下多黑線", hintEn: "Line under window" },
-                    { x: 0.5088, y: 0.9112, radius: 0.0859, hintZh: "地上泡泡變少", hintEn: "Missing foam" },
-                    { x: 0.6434, y: 0.0590, radius: 0.0859, hintZh: "反光形狀不同", hintEn: "Different reflection" },
-                    { x: 0.2941, y: 0.5997, radius: 0.0859, hintZh: "海綿顏色變淡", hintEn: "Lighter sponge" }
-                ]
-            }
+            { id: 1, name: "L1: 森林", img1: "S__52166671.jpg", img2: "S__52166671_1.png", diffs: [{x:0.5675,y:0.3207,r:0.08},{x:0.4029,y:0.2252,r:0.08},{x:0.7622,y:0.2259,r:0.08},{x:0.2641,y:0.915,r:0.08},{x:0.4716,y:0.872,r:0.08}], hints: ["手套顏色","帽子星星","氣球棒","鞋帶","圍欄"] },
+            { id: 2, name: "L2: 展場", img1: "S__52166670.jpg", img2: "S__52166670_1.jpg", diffs: [{x:0.4018,y:0.875,r:0.09},{x:0.6096,y:0.8584,r:0.09},{x:0.694,y:0.292,r:0.09},{x:0.5612,y:0.0254,r:0.09},{x:0.6175,y:0.1641,r:0.09}], hints: ["扣子","地板亮點","眼睛線條","背景線條","髮圈"] },
+            { id: 3, name: "L3: 洗車", img1: "S__52166669.jpg", img2: "S__52166669_1.jpg", diffs: [{x:0.1066,y:0.3928,r:0.08},{x:0.3843,y:0.3627,r:0.08},{x:0.5088,y:0.9112,r:0.08},{x:0.6434,y:0.059,r:0.08},{x:0.2941,y:0.5997,r:0.08}], hints: ["車燈反光","車窗黑線","地上泡泡","玻璃反光","海綿顏色"] }
         ];
 
-        const imageLeft = document.getElementById("image-left");
-        const imageRight = document.getElementById("image-right");
-        const labelLeft = document.getElementById("labelLeft");
-        const labelRight = document.getElementById("labelRight");
-        const leftImg = document.getElementById("image-left-img");
-        const rightImg = document.getElementById("image-right-img");
-        const levelNameEl = document.getElementById("levelName");
-        const timeEl = document.getElementById("time");
-        const foundEl = document.getElementById("found");
-        const totalEl = document.getElementById("total");
-        const msgEl = document.getElementById("message");
-        const btnRestart = document.getElementById("btnRestart");
-        const btnShowAll = document.getElementById("btnShowAll");
-        const btnHint = document.getElementById("btnHint");
-        const levelSelect = document.getElementById("levelSelect");
-        const langSelect = document.getElementById("langSelect");
+        let curLv = 0, found = [], timeLeft = 120, timer = null, isOver = false, hintIdx = 0;
+        const el = (id) => document.getElementById(id);
 
-        let currentLevelIndex = 0;
-        let differences = [];
-        let foundFlags = [];
-        let timeLimit = 120;
-        let timeLeft = timeLimit;
-        let timerId = null;
-        let gameOver = false;
-        let currentHintIndex = 0;
-        let audioCtx = null;
+        // 音效
+        const playSound = (type) => {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(); 
+            const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.frequency.value = type === 'win' ? 880 : (type === 'hit' ? 600 : 300);
+            osc.type = type === 'win' ? 'triangle' : 'sine';
+            osc.start(); 
+            g.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
+            osc.stop(ctx.currentTime + 0.3);
+        };
 
-        function getAudioCtx() {
-            if (!audioCtx) {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                if (AC) audioCtx = new AC();
-            }
-            return audioCtx;
-        }
-
-        function playBeep(freq, duration, type = "sine", volume = 0.25, delay = 0) {
-            const ctx = getAudioCtx();
-            if (!ctx) return;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            gain.gain.value = volume;
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            const now = ctx.currentTime + delay;
-            osc.start(now);
-            osc.stop(now + duration);
-            gain.gain.setValueAtTime(volume, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-        }
-        function playCorrectSound() { playBeep(880, 0.12, "sine", 0.25, 0); playBeep(1320, 0.14, "sine", 0.22, 0.08); }
-        function playWinSound() { playBeep(880, 0.18, "triangle", 0.26, 0); playBeep(1175, 0.18, "triangle", 0.24, 0.16); playBeep(1568, 0.24, "triangle", 0.22, 0.32); }
-
-        function loadLevel(index) {
-            currentLevelIndex = index;
-            const level = levels[index];
-            leftImg.src = level.originalImage;
-            rightImg.src = level.diffImage;
-            levelNameEl.textContent = level.titleZh;
-            differences = level.differences;
-            totalEl.textContent = differences.length.toString();
-            currentHintIndex = 0;
-            msgEl.textContent = "請找出 " + differences.length + " 個不同！";
+        function loadLevel(idx) {
+            curLv = idx;
+            const lv = levels[idx];
+            el('image-left-img').src = lv.img1;
+            el('image-right-img').src = lv.img2;
+            el('levelName').innerText = lv.name;
+            el('total').innerText = lv.diffs.length;
+            found = lv.diffs.map(() => false);
+            hintIdx = 0;
             startGame();
         }
 
         function startGame() {
-            [...document.querySelectorAll(".marker")].forEach(el => el.remove());
-            imageRight.classList.remove("hit");
-            foundFlags = differences.map(() => false);
-            timeLeft = timeLimit;
-            gameOver = false;
-            timeEl.textContent = timeLeft.toString();
-            foundEl.textContent = "0";
-            btnShowAll.disabled = false;
-            btnHint.disabled = false;
-            if (timerId) clearInterval(timerId);
-            timerId = setInterval(() => {
+            document.querySelectorAll('.marker').forEach(m => m.remove());
+            isOver = false; timeLeft = 120;
+            el('time').innerText = timeLeft;
+            el('found').innerText = 0;
+            el('message').innerText = "找出 " + levels[curLv].diffs.length + " 個不同";
+            el('btnShowAll').disabled = false;
+            if (timer) clearInterval(timer);
+            timer = setInterval(() => {
                 timeLeft--;
-                if (timeLeft < 0) timeLeft = 0;
-                timeEl.textContent = timeLeft.toString();
-                if (timeLeft === 0) endGame(false);
+                el('time').innerText = timeLeft;
+                if (timeLeft <= 0) endGame(false);
             }, 1000);
         }
 
-        function endGame(isWin) {
-            if (gameOver) return;
-            gameOver = true;
-            if (timerId) { clearInterval(timerId); timerId = null; }
-            if (isWin) {
-                msgEl.textContent = "🎉 過關！";
-                playWinSound();
+        function endGame(win) {
+            isOver = true; clearInterval(timer);
+            el('message').innerText = win ? "🎉 過關！" : "時間到";
+            if (win) {
+                playSound('win');
                 setTimeout(() => {
-                    if (currentLevelIndex < levels.length - 1) {
-                        const nextIndex = currentLevelIndex + 1;
-                        levelSelect.value = String(nextIndex);
-                        loadLevel(nextIndex);
-                    } else { msgEl.textContent = "🏆 全通關！"; }
+                    if (curLv < levels.length - 1) {
+                        el('levelSelect').value = curLv + 1;
+                        loadLevel(curLv + 1);
+                    } else el('message').innerText = "🏆 全破關！";
                 }, 1500);
-            } else { msgEl.textContent = "⌛ 時間到"; }
+            }
         }
 
-        function addMarker(container, normX, normY) {
-            const marker = document.createElement("div");
-            marker.className = "marker";
-            marker.style.left = (normX * 100) + "%";
-            marker.style.top = (normY * 100) + "%";
-            container.appendChild(marker);
+        function mark(x, y) {
+            const create = (p) => {
+                const m = document.createElement('div');
+                m.className = 'marker';
+                m.style.left = (x * 100) + '%'; m.style.top = (y * 100) + '%';
+                p.appendChild(m);
+            };
+            create(el('image-left').parentNode); // Notice: append to wrapper for better positioning
+            create(el('image-right').parentNode);
         }
+        
+        // 修正點擊事件，改為綁定在 wrapper 上，避免 inner 尺寸問題
+        const clickHandler = (e) => {
+            if (isOver) return;
+            const rect = e.currentTarget.getBoundingClientRect(); // Use wrapper rect
+            // 計算相對於圖片的座標 (假設圖片置中)
+            const img = e.currentTarget.querySelector('img');
+            const imgRect = img.getBoundingClientRect();
+            
+            // 檢查點擊是否在圖片範圍內
+            if (e.clientX < imgRect.left || e.clientX > imgRect.right || 
+                e.clientY < imgRect.top || e.clientY > imgRect.bottom) return;
 
-        function handleClick(e) {
-            if(!audioCtx) getAudioCtx();
-            if (gameOver) return;
-            const rect = imageRight.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const clickY = e.clientY - rect.top;
-            const normX = clickX / rect.width;
-            const normY = clickY / rect.height;
-            let hitIndex = -1;
-            differences.forEach((diff, index) => {
-                if (foundFlags[index]) return;
-                const dx = normX - diff.x;
-                const dy = normY - diff.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance <= diff.radius) hitIndex = index;
+            const nx = (e.clientX - imgRect.left) / imgRect.width;
+            const ny = (e.clientY - imgRect.top) / imgRect.height;
+
+            let hit = -1;
+            levels[curLv].diffs.forEach((d, i) => {
+                if (!found[i] && Math.hypot(nx - d.x, ny - d.y) < d.r) hit = i;
             });
-            if (hitIndex >= 0) {
-                foundFlags[hitIndex] = true;
-                addMarker(imageRight, differences[hitIndex].x, differences[hitIndex].y);
-                addMarker(imageLeft, differences[hitIndex].x, differences[hitIndex].y);
-                const foundCount = foundFlags.filter(Boolean).length;
-                foundEl.textContent = foundCount.toString();
-                msgEl.textContent = "✅ 找到！";
-                playCorrectSound();
-                imageRight.classList.remove("hit");
-                void imageRight.offsetWidth;
-                imageRight.classList.add("hit");
-                if (foundCount === differences.length) endGame(true);
-            } else { msgEl.textContent = "👀 再看看"; }
-        }
 
-        function showAllAnswers() {
-            differences.forEach((diff, index) => {
-                if (!foundFlags[index]) {
-                    addMarker(imageRight, diff.x, diff.y);
-                    addMarker(imageLeft, diff.x, diff.y);
-                    foundFlags[index] = true;
-                }
-            });
-            foundEl.textContent = foundFlags.filter(Boolean).length.toString();
+            if (hit >= 0) {
+                found[hit] = true;
+                mark(levels[curLv].diffs[hit].x, levels[curLv].diffs[hit].y);
+                el('found').innerText = found.filter(Boolean).length;
+                playSound('hit');
+                el('message').innerText = "✅ 找到一個！";
+                if (found.every(Boolean)) endGame(true);
+            }
+        };
+
+        document.querySelectorAll('.image-wrapper').forEach(w => w.addEventListener('click', clickHandler));
+
+        el('btnRestart').onclick = startGame;
+        el('btnShowAll').onclick = () => {
+            levels[curLv].diffs.forEach((d, i) => { if (!found[i]) mark(d.x, d.y); });
             endGame(false);
-            btnShowAll.disabled = true;
-        }
-
-        function showHint() {
-            const level = levels[currentLevelIndex];
-            if (!level.differences.length) return;
-            const diff = level.differences[currentHintIndex];
-            const lang = langSelect.value;
-            const text = lang === "zh" ? diff.hintZh : diff.hintEn;
-            msgEl.textContent = text;
-            currentHintIndex = (currentHintIndex + 1) % level.differences.length;
-        }
-
-        imageRight.addEventListener("click", handleClick);
-        btnRestart.addEventListener("click", () => startGame());
-        btnShowAll.addEventListener("click", showAllAnswers);
-        btnHint.addEventListener("click", showHint);
-        levelSelect.addEventListener("change", (e) => loadLevel(parseInt(e.target.value, 10) || 0));
+            el('btnShowAll').disabled = true;
+        };
+        el('btnHint').onclick = () => {
+            const lv = levels[curLv];
+            el('message').innerText = "提示: " + lv.hints[hintIdx];
+            hintIdx = (hintIdx + 1) % lv.diffs.length;
+        };
+        el('levelSelect').onchange = (e) => loadLevel(parseInt(e.target.value));
 
         loadLevel(0);
     </script>
