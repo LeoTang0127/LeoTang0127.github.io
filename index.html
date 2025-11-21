@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>找不同 (最終修復版)</title>
+    <title>安安來找不同</title>
     <style>
         * {
             box-sizing: border-box;
@@ -15,12 +15,12 @@
             margin: 0;
             padding: 0;
             /* 使用 svh 確保扣除手機網址列 */
-            height: 100svh; 
+            height: 100svh;
             width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* 禁止整個頁面捲動 */
+            overflow: hidden; /* 禁止整個頁面捲動（橫向模式用） */
         }
 
         .game-container {
@@ -42,7 +42,7 @@
             padding-bottom: 8px;
             border-bottom: 1px solid #eee;
             margin-bottom: 8px;
-            height: 40px; /* 給定固定高度 */
+            height: 40px; /* 固定高度 */
         }
 
         .title { font-weight: bold; font-size: 16px; }
@@ -51,7 +51,7 @@
         /* === 遊戲區 (Board) === */
         .board {
             flex: 1; /* 佔滿剩餘空間 */
-            min-height: 0; /* ❗關鍵：允許 Flex 子元素縮小 */
+            min-height: 0; /* ❗允許 Flex 子元素縮小 */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -62,8 +62,7 @@
 
         .image-wrapper {
             position: relative;
-            /* 預設為彈性空間 */
-            flex: 1; 
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -87,7 +86,8 @@
         /* 標記點 */
         .marker {
             position: absolute;
-            width: 30px; height: 30px;
+            width: 30px;
+            height: 30px;
             border: 3px solid red;
             border-radius: 50%;
             transform: translate(-50%, -50%);
@@ -138,49 +138,46 @@
             }
 
             .image-wrapper {
-                width: 100%; /* 寬度滿版 */
-                height: auto; /* 高度隨圖片 */
+                width: 100%;
+                height: auto;
                 flex: none;
                 margin-bottom: 10px;
             }
 
             .game-img {
-                width: 100%; /* 圖片撐滿寬度 */
+                width: 100%;
                 height: auto;
             }
         }
 
         /* ================================================= */
-        /* 📱 模式 2：手機橫向 (Landscape) -> 強制並排不捲動 */
+        /* 📱 模式 2：手機橫向 (Landscape) -> 並排不捲動 */
         /* ================================================= */
         @media (orientation: landscape) {
-            /* 這裡不需額外設定 body，沿用預設的 overflow: hidden */
+            /* body 保持 overflow:hidden、flex 置中 */
 
             .game-container {
-                padding: 4px 10px; /* 減少邊距 */
+                padding: 4px 10px;
             }
 
             .header, .footer {
-                height: 30px; /* 壓縮上下高度 */
+                height: 30px;
                 margin: 2px 0;
                 font-size: 12px;
             }
 
             .board {
-                flex-direction: row; /* ❗左右並排 */
+                flex-direction: row; /* 左右並排 */
                 align-items: center;
-                height: 100%; /* 撐滿中間區域 */
+                height: 100%;
             }
 
             .image-wrapper {
-                /* ❗重點中的重點： */
-                height: 100%;       /* 高度撐滿父容器 */
-                width: auto;        /* 寬度自動 */
+                height: 100%;
+                width: auto;
                 background: transparent;
                 border: none;
-                
-                /* 雙重保險：最大寬度設為螢幕的一半減去一點間隙 */
-                max-width: 48vw; 
+                max-width: 48vw;  /* 每張最多半個螢幕寬 */
             }
 
             .image-inner {
@@ -189,17 +186,14 @@
             }
 
             .game-img {
-                /* 讓圖片高度 100% 貼合容器高度 */
                 height: 100%;
-                width: auto; 
-                
-                /* 再次保險：寬度絕對不能超過螢幕一半 */
-                max-width: 100%; 
+                width: auto;
+                max-width: 100%;
             }
 
             /* 隱藏佔空間的元素 */
             .title span:first-child { display: none; } /* 隱藏 emoji */
-            #labelLeft, #labelRight { display: none; } /* 隱藏圖片標籤 */
+            /* 若你之後加 labelLeft/Right 再隱藏即可 */
         }
     </style>
 </head>
@@ -207,12 +201,17 @@
     <div class="game-container">
         <div class="header">
             <div class="title">
-                <span>🌟</span> 找不同 <span style="background:#eee; padding:2px 6px; border-radius:10px; font-size:12px" id="levelName">L1</span>
+                <span>🌟</span> 找不同
+                <span style="background:#eee; padding:2px 6px; border-radius:10px; font-size:12px" id="levelName">L1</span>
             </div>
             <div class="stats">
                 <span>⏱ <b id="time">120</b></span>
                 <span>✅ <b id="found">0</b>/<span id="total">5</span></span>
-                <select id="levelSelect"><option value="0">1</option><option value="1">2</option><option value="2">3</option></select>
+                <select id="levelSelect">
+                    <option value="0">1</option>
+                    <option value="1">2</option>
+                    <option value="2">3</option>
+                </select>
             </div>
         </div>
 
@@ -240,23 +239,71 @@
     <script>
         // === 遊戲資料 ===
         const levels = [
-            { id: 1, name: "L1: 森林", img1: "S__52166671.jpg", img2: "S__52166671_1.png", diffs: [{x:0.5675,y:0.3207,r:0.08},{x:0.4029,y:0.2252,r:0.08},{x:0.7622,y:0.2259,r:0.08},{x:0.2641,y:0.915,r:0.08},{x:0.4716,y:0.872,r:0.08}], hints: ["手套顏色","帽子星星","氣球棒","鞋帶","圍欄"] },
-            { id: 2, name: "L2: 展場", img1: "S__52166670.jpg", img2: "S__52166670_1.jpg", diffs: [{x:0.4018,y:0.875,r:0.09},{x:0.6096,y:0.8584,r:0.09},{x:0.694,y:0.292,r:0.09},{x:0.5612,y:0.0254,r:0.09},{x:0.6175,y:0.1641,r:0.09}], hints: ["扣子","地板亮點","眼睛線條","背景線條","髮圈"] },
-            { id: 3, name: "L3: 洗車", img1: "S__52166669.jpg", img2: "S__52166669_1.jpg", diffs: [{x:0.1066,y:0.3928,r:0.08},{x:0.3843,y:0.3627,r:0.08},{x:0.5088,y:0.9112,r:0.08},{x:0.6434,y:0.059,r:0.08},{x:0.2941,y:0.5997,r:0.08}], hints: ["車燈反光","車窗黑線","地上泡泡","玻璃反光","海綿顏色"] }
+            {
+                id: 1,
+                name: "L1: 森林",
+                img1: "S__52166671.jpg",
+                img2: "S__52166671_1.png",
+                diffs: [
+                    { x: 0.5675, y: 0.3207, r: 0.08 },
+                    { x: 0.4029, y: 0.2252, r: 0.08 },
+                    { x: 0.7622, y: 0.2259, r: 0.08 },
+                    { x: 0.2641, y: 0.915,  r: 0.08 },
+                    { x: 0.4716, y: 0.872,  r: 0.08 }
+                ],
+                hints: ["手套顏色", "帽子星星", "氣球棒", "鞋帶", "圍欄"]
+            },
+            {
+                id: 2,
+                name: "L2: 展場",
+                img1: "S__52166670.jpg",
+                img2: "S__52166670_1.jpg",
+                diffs: [
+                    { x: 0.4018, y: 0.875,  r: 0.09 },
+                    { x: 0.6096, y: 0.8584, r: 0.09 },
+                    { x: 0.694,  y: 0.292,  r: 0.09 },
+                    { x: 0.5612, y: 0.0254, r: 0.09 },
+                    { x: 0.6175, y: 0.1641, r: 0.09 }
+                ],
+                hints: ["扣子", "地板亮點", "眼睛線條", "背景線條", "髮圈"]
+            },
+            {
+                id: 3,
+                name: "L3: 洗車",
+                img1: "S__52166669.jpg",
+                img2: "S__52166669_1.jpg",
+                diffs: [
+                    { x: 0.1066, y: 0.3928, r: 0.08 },
+                    { x: 0.3843, y: 0.3627, r: 0.08 },
+                    { x: 0.5088, y: 0.9112, r: 0.08 },
+                    { x: 0.6434, y: 0.059,  r: 0.08 },
+                    { x: 0.2941, y: 0.5997, r: 0.08 }
+                ],
+                hints: ["車燈反光", "車窗黑線", "地上泡泡", "玻璃反光", "海綿顏色"]
+            }
         ];
 
-        let curLv = 0, found = [], timeLeft = 120, timer = null, isOver = false, hintIdx = 0;
+        let curLv = 0,
+            found = [],
+            timeLeft = 120,
+            timer = null,
+            isOver = false,
+            hintIdx = 0;
+
         const el = (id) => document.getElementById(id);
 
         // 音效
         const playSound = (type) => {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator(); 
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            const ctx = new AC();
+            const osc = ctx.createOscillator();
             const g = ctx.createGain();
-            osc.connect(g); g.connect(ctx.destination);
-            osc.frequency.value = type === 'win' ? 880 : (type === 'hit' ? 600 : 300);
-            osc.type = type === 'win' ? 'triangle' : 'sine';
-            osc.start(); 
+            osc.connect(g);
+            g.connect(ctx.destination);
+            osc.frequency.value = type === "win" ? 880 : (type === "hit" ? 600 : 300);
+            osc.type = type === "win" ? "triangle" : "sine";
+            osc.start();
             g.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
             osc.stop(ctx.currentTime + 0.3);
         };
@@ -264,101 +311,124 @@
         function loadLevel(idx) {
             curLv = idx;
             const lv = levels[idx];
-            el('image-left-img').src = lv.img1;
-            el('image-right-img').src = lv.img2;
-            el('levelName').innerText = lv.name;
-            el('total').innerText = lv.diffs.length;
+            el("image-left-img").src = lv.img1;
+            el("image-right-img").src = lv.img2;
+            el("levelName").innerText = lv.name;
+            el("total").innerText = lv.diffs.length;
             found = lv.diffs.map(() => false);
             hintIdx = 0;
             startGame();
         }
 
         function startGame() {
-            document.querySelectorAll('.marker').forEach(m => m.remove());
-            isOver = false; timeLeft = 120;
-            el('time').innerText = timeLeft;
-            el('found').innerText = 0;
-            el('message').innerText = "找出 " + levels[curLv].diffs.length + " 個不同";
-            el('btnShowAll').disabled = false;
+            document.querySelectorAll(".marker").forEach(m => m.remove());
+            isOver = false;
+            timeLeft = 120;
+            el("time").innerText = timeLeft;
+            el("found").innerText = 0;
+            el("message").innerText = "找出 " + levels[curLv].diffs.length + " 個不同";
+            el("btnShowAll").disabled = false;
             if (timer) clearInterval(timer);
             timer = setInterval(() => {
                 timeLeft--;
-                el('time').innerText = timeLeft;
+                el("time").innerText = timeLeft;
                 if (timeLeft <= 0) endGame(false);
             }, 1000);
         }
 
         function endGame(win) {
-            isOver = true; clearInterval(timer);
-            el('message').innerText = win ? "🎉 過關！" : "時間到";
+            if (isOver) return;
+            isOver = true;
+            clearInterval(timer);
+            el("message").innerText = win ? "🎉 過關！" : "時間到";
             if (win) {
-                playSound('win');
+                playSound("win");
                 setTimeout(() => {
                     if (curLv < levels.length - 1) {
-                        el('levelSelect').value = curLv + 1;
+                        el("levelSelect").value = curLv + 1;
                         loadLevel(curLv + 1);
-                    } else el('message').innerText = "🏆 全破關！";
+                    } else {
+                        el("message").innerText = "🏆 全破關！";
+                    }
                 }, 1500);
             }
         }
 
-        function mark(x, y) {
-            const create = (p) => {
-                const m = document.createElement('div');
-                m.className = 'marker';
-                m.style.left = (x * 100) + '%'; m.style.top = (y * 100) + '%';
-                p.appendChild(m);
+        // ✅ 修正版：圈圈畫在 image-inner（圖片等大的容器）上
+        function mark(normX, normY) {
+            const addMarker = (parent) => {
+                const m = document.createElement("div");
+                m.className = "marker";
+                m.style.left = (normX * 100) + "%";
+                m.style.top = (normY * 100) + "%";
+                parent.appendChild(m);
             };
-            create(el('image-left').parentNode); // Notice: append to wrapper for better positioning
-            create(el('image-right').parentNode);
+            addMarker(el("image-left"));
+            addMarker(el("image-right"));
         }
-        
-        // 修正點擊事件，改為綁定在 wrapper 上，避免 inner 尺寸問題
+
+        // 點擊事件：掛在 wrapper，但座標用 imgRect 算（只算圖片範圍）
         const clickHandler = (e) => {
             if (isOver) return;
-            const rect = e.currentTarget.getBoundingClientRect(); // Use wrapper rect
-            // 計算相對於圖片的座標 (假設圖片置中)
-            const img = e.currentTarget.querySelector('img');
+            const wrapper = e.currentTarget;
+            const img = wrapper.querySelector("img");
+            if (!img) return;
+
             const imgRect = img.getBoundingClientRect();
-            
-            // 檢查點擊是否在圖片範圍內
-            if (e.clientX < imgRect.left || e.clientX > imgRect.right || 
-                e.clientY < imgRect.top || e.clientY > imgRect.bottom) return;
+
+            // 點到圖片外就忽略
+            if (
+                e.clientX < imgRect.left || e.clientX > imgRect.right ||
+                e.clientY < imgRect.top || e.clientY > imgRect.bottom
+            ) return;
 
             const nx = (e.clientX - imgRect.left) / imgRect.width;
             const ny = (e.clientY - imgRect.top) / imgRect.height;
 
             let hit = -1;
             levels[curLv].diffs.forEach((d, i) => {
-                if (!found[i] && Math.hypot(nx - d.x, ny - d.y) < d.r) hit = i;
+                if (!found[i] && Math.hypot(nx - d.x, ny - d.y) < d.r) {
+                    hit = i;
+                }
             });
 
             if (hit >= 0) {
                 found[hit] = true;
-                mark(levels[curLv].diffs[hit].x, levels[curLv].diffs[hit].y);
-                el('found').innerText = found.filter(Boolean).length;
-                playSound('hit');
-                el('message').innerText = "✅ 找到一個！";
+                const d = levels[curLv].diffs[hit];
+                mark(d.x, d.y);
+                el("found").innerText = found.filter(Boolean).length;
+                playSound("hit");
+                el("message").innerText = "✅ 找到一個！";
                 if (found.every(Boolean)) endGame(true);
             }
         };
 
-        document.querySelectorAll('.image-wrapper').forEach(w => w.addEventListener('click', clickHandler));
+        document
+            .querySelectorAll(".image-wrapper")
+            .forEach(w => w.addEventListener("click", clickHandler));
 
-        el('btnRestart').onclick = startGame;
-        el('btnShowAll').onclick = () => {
-            levels[curLv].diffs.forEach((d, i) => { if (!found[i]) mark(d.x, d.y); });
+        el("btnRestart").onclick = startGame;
+
+        el("btnShowAll").onclick = () => {
+            levels[curLv].diffs.forEach((d, i) => {
+                if (!found[i]) mark(d.x, d.y);
+            });
             endGame(false);
-            el('btnShowAll').disabled = true;
+            el("btnShowAll").disabled = true;
         };
-        el('btnHint').onclick = () => {
+
+        el("btnHint").onclick = () => {
             const lv = levels[curLv];
-            el('message').innerText = "提示: " + lv.hints[hintIdx];
+            el("message").innerText = "提示: " + lv.hints[hintIdx];
             hintIdx = (hintIdx + 1) % lv.diffs.length;
         };
-        el('levelSelect').onchange = (e) => loadLevel(parseInt(e.target.value));
 
+        el("levelSelect").onchange = (e) =>
+            loadLevel(parseInt(e.target.value, 10));
+
+        // 啟動第一關
         loadLevel(0);
     </script>
 </body>
 </html>
+
