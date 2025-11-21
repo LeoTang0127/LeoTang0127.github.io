@@ -3,57 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>安安來找不同</title>
+    <title>安安來找不同 (版面修復版)</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        /* === 基礎設定 === */
+        * { box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: #f0f4f8;
-            margin: 0;
-            padding: 0;
-            height: 100svh;
+            margin: 0; padding: 0;
+            height: 100svh; /* 使用 svh 解決手機網址列跳動問題 */
             width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden; /* 橫向模式禁止整頁捲動 */
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+            user-select: none;
         }
 
         .game-container {
             background: white;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding: 8px;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            padding: 8px; /* 預設邊距 */
             position: relative;
+            max-width: 800px; /* 電腦版限制最大寬度，避免太寬難看 */
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
         /* === 頭部 (Header) === */
         .header {
             flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 8px;
-            height: 40px;
+            height: 44px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #eee; margin-bottom: 6px;
         }
-
-        .title { font-weight: bold; font-size: 16px; }
-        .stats { font-size: 13px; display: flex; gap: 8px; }
+        .title { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 5px; }
+        .stats { font-size: 13px; display: flex; gap: 8px; align-items: center; }
 
         /* === 遊戲區 (Board) === */
         .board {
             flex: 1;
-            min-height: 0;
+            min-height: 0; /* 關鍵！允許 Flex 子元素縮小，避免破版 */
             display: flex;
-            justify-content: center;
-            align-items: center;
+            justify-content: center; align-items: center;
             gap: 10px;
             width: 100%;
             position: relative;
@@ -62,196 +53,126 @@
         .image-wrapper {
             position: relative;
             flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
+            display: flex; justify-content: center; align-items: center;
+            border: 2px solid #ddd; border-radius: 8px;
+            overflow: hidden; background: #000;
         }
 
         .image-inner {
-            position: relative;
-            display: inline-block;
-            line-height: 0;
+            position: relative; display: inline-block; line-height: 0;
+            width: 100%; height: 100%;
         }
 
+        /* 圖片核心設定：保持比例，完整顯示 */
         .game-img {
             display: block;
-            object-fit: contain;
-        }
-
-        /* 標記點 */
-        .marker {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 3px solid red;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            box-shadow: 0 0 0 2px white;
+            width: 100%; height: 100%;
+            object-fit: contain; 
         }
 
         /* === 底部 (Footer) === */
         .footer {
             flex-shrink: 0;
-            height: 40px;
-            display: flex;
-            justify-content: flex-start;
+            height: 44px;
+            display: flex; 
+            justify-content: space-between; /* ❗修正：讓按鈕平均分佈 */
             align-items: center;
-            border-top: 1px solid #eee;
-            padding-top: 6px;
-            margin-top: 6px;
-            gap: 5px;
+            border-top: 1px solid #eee; 
+            padding-top: 6px; margin-top: 6px;
+            gap: 4px;
         }
 
         #message {
-            flex: 1;
-            font-size: 12px;
-            color: #666;
+            flex: 1; font-size: 12px; color: #666;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
         button {
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid #ccc;
-            background: #f8f9fa;
-            font-size: 12px;
-            cursor: pointer;
+            padding: 6px 10px; border-radius: 20px;
+            border: 1px solid #ccc; background: #f8f9fa;
+            font-size: 12px; cursor: pointer; white-space: nowrap;
+            transition: background 0.2s;
         }
+        button:active { background: #e2e6ea; }
+        button:disabled { opacity: 0.6; cursor: default; }
 
-        button:disabled {
-            opacity: 0.6;
-            cursor: default;
+        /* 標記點 */
+        .marker {
+            position: absolute; width: 30px; height: 30px;
+            border: 3px solid #ff4757; border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none;
+            box-shadow: 0 0 0 2px white, 0 0 5px rgba(0,0,0,0.3);
+            z-index: 10;
         }
 
         /* === 通關特效 Overlay === */
         .win-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.25s ease-out;
+            position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 50; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
         }
-
-        .win-overlay.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
+        .win-overlay.show { opacity: 1; pointer-events: auto; }
         .win-box {
-            background: #fff;
-            border-radius: 16px;
-            padding: 16px 24px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-            animation: winPop 0.35s ease-out;
-            max-width: 260px;
+            background: #fff; border-radius: 16px;
+            padding: 20px 30px; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
-        .win-title {
-            font-size: 20px;
-            margin-bottom: 6px;
-        }
-
-        .win-sub {
-            font-size: 13px;
-            color: #555;
-        }
-
-        @keyframes winPop {
-            from {
-                transform: scale(0.7);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         /* ================================================= */
-        /* 📱 直向 Portrait：上下捲動模式                   */
+        /* 📱 直向 (Portrait) - 上下排列 */
         /* ================================================= */
         @media (orientation: portrait) {
-            body {
-                height: auto;
-                min-height: 100svh;
-                overflow-y: auto;
-                display: block;
-            }
-
-            .game-container {
-                height: auto;
-                min-height: 100svh;
-            }
-
-            .board {
-                flex-direction: column;
-                height: auto;
-                flex: none;
-            }
-
+            body { height: auto; min-height: 100svh; overflow-y: auto; display: block; }
+            .game-container { height: auto; min-height: 100svh; max-width: 100%; border-radius: 0; }
+            
+            .board { flex-direction: column; height: auto; flex: none; }
+            
             .image-wrapper {
-                width: 100%;
-                height: auto;
-                flex: none;
-                margin-bottom: 10px;
+                width: 100%; height: auto; 
+                flex: none; /* 取消彈性，由圖片撐高 */
+                margin-bottom: 8px;
+                aspect-ratio: unset; /* 解除比例限制 */
             }
-
-            .game-img {
-                width: 100%;
-                height: auto;
-            }
+            .image-inner { height: auto; }
+            .game-img { height: auto; }
         }
 
         /* ================================================= */
-        /* 📱 橫向 Landscape：左右並排不捲動               */
+        /* 📱 橫向 (Landscape) - 左右並排，不捲動 */
         /* ================================================= */
         @media (orientation: landscape) {
-            .game-container {
-                padding: 4px 10px;
-            }
-
-            .header, .footer {
-                height: 30px;
-                margin: 2px 0;
-                font-size: 12px;
-            }
+            .game-container { padding: 4px 12px; } /* 減少邊距 */
+            
+            .header, .footer { height: 34px; margin: 2px 0; } /* 壓縮上下欄 */
+            .header { margin-bottom: 4px; }
+            .footer { margin-top: 4px; }
 
             .board {
-                flex-direction: row;
-                align-items: center;
-                height: 100%;
+                flex-direction: row; /* 左右排 */
+                height: 100%; /* 佔滿中間 */
             }
 
             .image-wrapper {
-                height: 100%;
-                width: auto;
-                background: transparent;
-                border: none;
-                max-width: 48vw;
+                height: 100%; /* 高度撐滿 */
+                width: auto;  /* 寬度自動 */
+                max-width: 48vw; /* 限制最大寬度，確保不重疊 */
+                background: transparent; border: none;
             }
 
-            .image-inner {
-                height: 100%;
-                width: auto;
+            .image-inner { height: 100%; width: auto; display: flex; justify-content: center; }
+            
+            /* 讓圖片高度 100%，寬度自動 */
+            .game-img { 
+                height: 100%; width: auto; 
+                max-width: 100%; 
             }
 
-            .game-img {
-                height: 100%;
-                width: auto;
-                max-width: 100%;
-            }
-
-            .title span:first-child { display: none; }
+            /* 橫向時隱藏不必要的 Emoji 節省空間 */
+            .title span:first-child { display: none; } 
         }
     </style>
 </head>
@@ -260,7 +181,7 @@
         <div class="header">
             <div class="title">
                 <span>🌟</span> 找不同
-                <span style="background:#eee; padding:2px 6px; border-radius:10px; font-size:12px" id="levelName">L1</span>
+                <span style="background:#eee; padding:2px 8px; border-radius:10px; font-size:12px; margin-left:5px;" id="levelName">L1</span>
             </div>
             <div class="stats">
                 <span>⏱ <b id="time">120</b></span>
@@ -287,34 +208,31 @@
         </div>
 
         <div class="footer">
-            <div id="message">開始遊戲</div>
-            <button id="btnMusic">音樂：ON</button>
-            <button id="btnHint">提示</button>
-            <button id="btnRestart">重來</button>
-            <button id="btnShowAll">解答</button>
+            <div id="message">遊戲開始</div>
+            <div style="display:flex; gap:5px;">
+                <button id="btnMusic">🎵 ON</button>
+                <button id="btnHint">💡 提示</button>
+                <button id="btnRestart">🔄 重來</button>
+                <button id="btnShowAll">解答</button>
+            </div>
         </div>
     </div>
 
-    <!-- 🎵 背景音樂（預設嘗試自動播放） -->
-    <!-- 請把 bgm.mp3 放在同一資料夾，或修改 src 為你的音樂路徑 -->
     <audio id="bgm" src="bgm.mp3" loop></audio>
 
-    <!-- 🎉 通關特效 Overlay -->
     <div class="win-overlay" id="winOverlay">
         <div class="win-box">
-            <div class="win-title" id="winText">通關！</div>
-            <div class="win-sub">太厲害了～準備下一關囉</div>
+            <h2 id="winText" style="margin:0 0 10px 0;">🎉 通關！</h2>
+            <p style="margin:0; color:#666; font-size:14px;">太厲害了！準備進入下一關...</p>
         </div>
     </div>
 
     <script>
-        // === 遊戲資料 ===
+        // === 遊戲設定 ===
         const levels = [
             {
-                id: 1,
-                name: "L1: 森林",
-                img1: "S__52166671.jpg",
-                img2: "S__52166671_1.png",
+                id: 1, name: "L1: 森林", 
+                img1: "S__52166671.jpg", img2: "S__52166671_1.png",
                 diffs: [
                     { x: 0.5675, y: 0.3207, r: 0.08 },
                     { x: 0.4029, y: 0.2252, r: 0.08 },
@@ -325,10 +243,8 @@
                 hints: ["手套顏色", "帽子星星", "氣球棒", "鞋帶", "圍欄"]
             },
             {
-                id: 2,
-                name: "L2: 展場",
-                img1: "S__52166670.jpg",
-                img2: "S__52166670_1.jpg",
+                id: 2, name: "L2: 展場", 
+                img1: "S__52166670.jpg", img2: "S__52166670_1.jpg",
                 diffs: [
                     { x: 0.4018, y: 0.875,  r: 0.09 },
                     { x: 0.6096, y: 0.8584, r: 0.09 },
@@ -339,10 +255,8 @@
                 hints: ["扣子", "地板亮點", "眼睛線條", "背景線條", "髮圈"]
             },
             {
-                id: 3,
-                name: "L3: 洗車",
-                img1: "S__52166669.jpg",
-                img2: "S__52166669_1.jpg",
+                id: 3, name: "L3: 洗車", 
+                img1: "S__52166669.jpg", img2: "S__52166669_1.jpg",
                 diffs: [
                     { x: 0.1066, y: 0.3928, r: 0.08 },
                     { x: 0.3843, y: 0.3627, r: 0.08 },
@@ -354,50 +268,38 @@
             }
         ];
 
-        // 🔧 調整：按的判定範圍放大一點（1.5 倍）
+        // 判定範圍倍率 (1.5倍比較好按)
         const HIT_SCALE = 1.5;
 
-        let curLv = 0,
-            found = [],
-            timeLeft = 120,
-            timer = null,
-            isOver = false,
-            hintIdx = 0;
-
+        let curLv = 0, found = [], timeLeft = 120, timer = null, isOver = false, hintIdx = 0;
+        
+        // DOM 元素
         const el = (id) => document.getElementById(id);
-
         const bgm = document.getElementById("bgm");
         const btnMusic = el("btnMusic");
         const winOverlay = el("winOverlay");
         const winText = el("winText");
-        let bgmOn = true;      // 預設開啟
+
+        let bgmOn = true; 
         let bgmStarted = false;
 
-        // 嘗試播放 BGM（考慮瀏覽器限制）
+        // --- 音樂邏輯 ---
         function tryPlayBgm() {
-            if (!bgm || bgmStarted === true) return;
+            if (!bgm || bgmStarted) return;
             bgm.play().then(() => {
                 bgmStarted = true;
                 bgmOn = true;
-                btnMusic.textContent = "音樂：ON";
+                btnMusic.textContent = "🎵 ON";
             }).catch(() => {
-                // 被瀏覽器擋住，就先顯示 OFF，等使用者再按
                 bgmOn = false;
-                bgmStarted = false;
-                btnMusic.textContent = "音樂：OFF";
+                btnMusic.textContent = "🔇 OFF";
             });
         }
 
-        // 載入完成先試一次
-        window.addEventListener("load", () => {
-            tryPlayBgm();
-        });
+        window.addEventListener("load", tryPlayBgm);
+        document.addEventListener("click", tryPlayBgm, { once: true });
+        document.addEventListener("touchstart", tryPlayBgm, { once: true });
 
-        // 第一次點擊 / 觸碰畫面時再試一次（for iOS / Chrome 限制）
-        document.addEventListener("click", () => { tryPlayBgm(); }, { once: true });
-        document.addEventListener("touchstart", () => { tryPlayBgm(); }, { once: true });
-
-        // 音樂按鈕：手動開關
         btnMusic.addEventListener("click", async () => {
             if (!bgm) return;
             if (!bgmOn) {
@@ -405,18 +307,16 @@
                     await bgm.play();
                     bgmOn = true;
                     bgmStarted = true;
-                    btnMusic.textContent = "音樂：ON";
-                } catch (e) {
-                    console.log("BGM 播放失敗:", e);
-                }
+                    btnMusic.textContent = "🎵 ON";
+                } catch (e) { console.log(e); }
             } else {
                 bgm.pause();
                 bgmOn = false;
-                btnMusic.textContent = "音樂：OFF";
+                btnMusic.textContent = "🔇 OFF";
             }
         });
 
-        // 小音效
+        // --- 音效產生器 (Web Audio API) ---
         const playSound = (type) => {
             const AC = window.AudioContext || window.webkitAudioContext;
             if (!AC) return;
@@ -425,13 +325,28 @@
             const g = ctx.createGain();
             osc.connect(g);
             g.connect(ctx.destination);
-            osc.frequency.value = type === "win" ? 880 : (type === "hit" ? 600 : 300);
-            osc.type = type === "win" ? "triangle" : "sine";
+            
+            if (type === "win") {
+                // 勝利音效
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(523, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(1046, ctx.currentTime + 0.3);
+            } else if (type === "hit") {
+                // 答對音效
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+            } else {
+                // 提示音
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+            }
+
             osc.start();
-            g.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
             osc.stop(ctx.currentTime + 0.3);
         };
 
+        // --- 遊戲核心 ---
         function loadLevel(idx) {
             curLv = idx;
             const lv = levels[idx];
@@ -453,6 +368,7 @@
             el("found").innerText = 0;
             el("message").innerText = "找出 " + levels[curLv].diffs.length + " 個不同";
             el("btnShowAll").disabled = false;
+            
             if (timer) clearInterval(timer);
             timer = setInterval(() => {
                 timeLeft--;
@@ -465,31 +381,26 @@
             if (isOver) return;
             isOver = true;
             clearInterval(timer);
+            
             if (win) {
                 el("message").innerText = "🎉 過關！";
                 playSound("win");
-
-                if (curLv < levels.length - 1) {
-                    winText.textContent = "通關！";
-                } else {
-                    winText.textContent = "全部通關！";
-                }
+                winText.textContent = (curLv < levels.length - 1) ? "🎉 通關成功！" : "🏆 全部破關！";
                 winOverlay.classList.add("show");
-
+                
                 setTimeout(() => {
                     if (curLv < levels.length - 1) {
                         el("levelSelect").value = curLv + 1;
                         loadLevel(curLv + 1);
                     } else {
-                        el("message").innerText = "🏆 全破關！";
+                        el("message").innerText = "🏆 恭喜全破！";
                     }
-                }, 1500);
+                }, 2000);
             } else {
                 el("message").innerText = "時間到";
             }
         }
 
-        // 圈圈畫在 image-inner（跟圖片一樣大）
         function mark(normX, normY) {
             const addMarker = (parent) => {
                 const m = document.createElement("div");
@@ -502,26 +413,22 @@
             addMarker(el("image-right"));
         }
 
-        // 點擊事件：掛在 wrapper，但座標用 imgRect 算（只算圖片範圍）
         const clickHandler = (e) => {
             if (isOver) return;
             const wrapper = e.currentTarget;
             const img = wrapper.querySelector("img");
             if (!img) return;
 
-            const imgRect = img.getBoundingClientRect();
+            const rect = img.getBoundingClientRect();
+            // 檢查是否點擊在圖片範圍內
+            if (e.clientX < rect.left || e.clientX > rect.right || 
+                e.clientY < rect.top || e.clientY > rect.bottom) return;
 
-            if (
-                e.clientX < imgRect.left || e.clientX > imgRect.right ||
-                e.clientY < imgRect.top || e.clientY > imgRect.bottom
-            ) return;
-
-            const nx = (e.clientX - imgRect.left) / imgRect.width;
-            const ny = (e.clientY - imgRect.top) / imgRect.height;
+            const nx = (e.clientX - rect.left) / rect.width;
+            const ny = (e.clientY - rect.top) / rect.height;
 
             let hit = -1;
             levels[curLv].diffs.forEach((d, i) => {
-                // 🔧 判定範圍放大：r * HIT_SCALE
                 if (!found[i] && Math.hypot(nx - d.x, ny - d.y) < d.r * HIT_SCALE) {
                     hit = i;
                 }
@@ -538,27 +445,19 @@
             }
         };
 
-        document
-            .querySelectorAll(".image-wrapper")
-            .forEach(w => w.addEventListener("click", clickHandler));
+        document.querySelectorAll(".image-wrapper").forEach(w => w.addEventListener("click", clickHandler));
 
         el("btnRestart").onclick = startGame;
 
         el("btnShowAll").onclick = () => {
             const lv = levels[curLv];
             lv.diffs.forEach((d, i) => {
-                if (!found[i]) {
-                    mark(d.x, d.y);
-                    found[i] = true;
-                }
+                if (!found[i]) { mark(d.x, d.y); found[i] = true; }
             });
-            el("found").innerText = found.filter(Boolean).length;
+            el("found").innerText = found.length;
             isOver = true;
-            if (timer) {
-                clearInterval(timer);
-                timer = null;
-            }
-            el("message").innerText = "✅ 已顯示全部答案";
+            clearInterval(timer);
+            el("message").innerText = "已顯示解答";
             el("btnShowAll").disabled = true;
         };
 
@@ -566,12 +465,11 @@
             const lv = levels[curLv];
             el("message").innerText = "提示: " + lv.hints[hintIdx];
             hintIdx = (hintIdx + 1) % lv.diffs.length;
+            playSound("hit");
         };
 
-        el("levelSelect").onchange = (e) =>
-            loadLevel(parseInt(e.target.value, 10));
+        el("levelSelect").onchange = (e) => loadLevel(parseInt(e.target.value, 10));
 
-        // 啟動第一關
         loadLevel(0);
     </script>
 </body>
