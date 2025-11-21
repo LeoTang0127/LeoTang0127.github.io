@@ -1,274 +1,637 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>哪都通 - 專業、安全、舒適</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>找不同小遊戲（三關＋提示版）</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #ffe7f0, #e6f3ff);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-container {
+            background: #ffffffcc;
+            border-radius: 20px;
+            padding: 16px 20px 20px;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+            max-width: 920px;
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pill {
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #fff7d1;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 8px;
+            font-size: 14px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+            .stats span {
+                padding: 4px 10px;
+                border-radius: 999px;
+                background: #f3f6ff;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .stats select {
+                border: none;
+                background: transparent;
+                font-size: 13px;
+                outline: none;
+                cursor: pointer;
+            }
+
+        .board {
+            margin-top: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .image-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid #f0e2ff;
+            min-height: 260px;
+        }
+
+        .image-inner {
+            position: relative;
+            display: inline-block; /* 跟裡面的 img 一樣大 */
+        }
+
+        .game-img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .image-label {
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #ffffffdd;
+            font-size: 13px;
+        }
+
+        .marker {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 3px solid #ff6b6b;
+            box-shadow: 0 0 0 3px #ffffffbb;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            animation: pop 0.2s ease-out;
+        }
+
+        @keyframes pop {
+            from {
+                transform: translate(-50%, -50%) scale(0.7);
+                opacity: 0;
+            }
+
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* 點對時，小小閃光特效 */
+        .image-wrapper.hit {
+            animation: hitFlash 0.25s ease-out;
+        }
+
+        @keyframes hitFlash {
+            from {
+                box-shadow: 0 0 0 0 rgba(255, 183, 197, 0.8);
+            }
+
+            to {
+                box-shadow: 0 0 0 14px rgba(255, 183, 197, 0);
+            }
+        }
+
+        .footer {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            gap: 8px;
+        }
+
+        .message {
+            min-height: 22px;
+            font-weight: 500;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #ffd8e8;
+        }
+
+            button.secondary {
+                background: #e7f5ff;
+            }
+
+            button:disabled {
+                opacity: 0.6;
+                cursor: default;
+            }
+
+        select#langSelect {
+            border-radius: 999px;
+            border: none;
+            background: #f3f6ff;
+            padding: 4px 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 720px) {
+            .board {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- 預約按鈕區域 -->
-    <div class="booking-banner">
-        <div class="container">
-            <div class="booking-buttons">
-                <a href="https://line.me/R/oaMessage/%40805pmliw/?" class="booking-btn line-btn" target="_blank">
-                    <i class="fab fa-line"></i>
-                    LINE 立即預約
-                </a>
+    <div class="game-container">
+        <div class="header">
+            <div class="title">
+                🌟 找不同小遊戲
+                <span class="pill" id="levelName">關卡 1：熊熊森林</span>
+            </div>
+            <div class="stats">
+                <span>⏱ 剩餘時間：<strong id="time">120</strong>s</span>
+                <span>✅ 已找到：<strong id="found">0</strong> / <span id="total">5</span></span>
+                <span>
+                    關卡：
+                    <select id="levelSelect">
+                        <option value="0">1</option>
+                        <option value="1">2</option>
+                        <option value="2">3</option>
+                    </select>
+                </span>
+            </div>
+        </div>
+
+        <div class="board">
+            <!-- 左邊：原圖 -->
+            <div class="image-wrapper">
+                <div class="image-inner" id="image-left">
+                    <img id="image-left-img" class="game-img" alt="原圖">
+                    <span class="image-label" id="labelLeft">原圖</span>
+                </div>
+            </div>
+
+            <!-- 右邊：修改版 -->
+            <div class="image-wrapper">
+                <div class="image-inner" id="image-right">
+                    <img id="image-right-img" class="game-img" alt="修改版">
+                    <span class="image-label" id="labelRight">找出 5 個不同的地方</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="message" id="message"></div>
+            <div class="btn-row">
+                <select id="langSelect">
+                    <option value="zh">提示：中文</option>
+                    <option value="en">Hint: English</option>
+                </select>
+                <button id="btnHint" class="secondary">顯示提示</button>
+                <button id="btnRestart">重新開始</button>
+                <button id="btnShowAll" class="secondary">顯示答案</button>
             </div>
         </div>
     </div>
 
-    <!-- 導航欄 -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <i class="fas fa-plane-departure"></i>
-                <span>哪都通 - 機場接送</span>
-            </div>
-            <ul class="nav-menu">
-                <li><a href="#home">首頁</a></li>
-                <li><a href="#services">服務</a></li>
-                <li><a href="#pricing">價格</a></li>
-                <li><a href="#about">關於我們</a></li>
-                <li><a href="#contact">聯絡我們</a></li>
-            </ul>
-            <div class="nav-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    </nav>
+    <script>
+        // === 三個關卡設定 ===
 
-    <!-- 主要橫幅 -->
-    <section id="home" class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1>哪都通</h1>
-                <p>安全、舒適、準時的機場接送，讓您的旅程更加完美</p>
-                <div class="hero-buttons">
-                    <a href="#services" class="btn btn-primary">了解更多</a>
-                    <a href="#contact" class="btn btn-secondary">立即預約</a>
-                </div>
-            </div>
-            <div class="hero-image">
-                <div class="hero-card">
-                    <div class="card-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h3>安全可靠</h3>
-                    <p>專業司機，車輛定期檢查</p>
-<div class="hero-qr" style="margin-top:10px;text-align:center;"><a href="https://line.me/R/oaMessage/%40805pmliw/?" target="_blank" rel="noopener"><img src="images/line-qr.png" alt="哪都通 LINE 官方 QR Code" width="160" height="160" style="display:inline-block;border:1px solid #eee;border-radius:8px;" loading="lazy"></a><div style="font-size:14px;color:#555;margin-top:6px;">@805pmliw</div></div>
+        const levels = [
+            // ＝＝＝ 第 1 關：小熊森林 ＝＝＝
+            {
+                id: 1,
+                titleZh: "關卡 1：熊熊森林",
+                originalImage: "S__52166671.jpg",
+                diffImage: "S__52166671_1.png",
+                differences: [
+                    {
+                        x: 0.5675,
+                        y: 0.3207,
+                        radius: 0.0859,
+                        hintZh: "小熊舉起的那隻手變成紫色手套。",
+                        hintEn: "The bear’s raised hand is purple."
+                    },
+                    {
+                        x: 0.4029,
+                        y: 0.2252,
+                        radius: 0.0859,
+                        hintZh: "小熊帽子上多了一顆小星星。",
+                        hintEn: "There is a little star on the bear’s hat."
+                    },
+                    {
+                        x: 0.7622,
+                        y: 0.2259,
+                        radius: 0.0859,
+                        hintZh: "氣球棒頂端被塗黑一小塊。",
+                        hintEn: "The tip of the balloon stick is black."
+                    },
+                    {
+                        x: 0.2641,
+                        y: 0.9150,
+                        radius: 0.0859,
+                        hintZh: "左腳鞋子多了一條紅色鞋帶。",
+                        hintEn: "There is a red shoelace on her left shoe."
+                    },
+                    {
+                        x: 0.4716,
+                        y: 0.8720,
+                        radius: 0.0859,
+                        hintZh: "最左邊那根木頭圍欄不見了或變短。",
+                        hintEn: "One wooden fence post on the left is missing."
+                    }
+                ]
+            },
 
-                </div>
-            </div>
-        </div>
-    </section>
+            // ＝＝＝ 第 2 關：室內 Kuromi 雕像 ＝＝＝
+            {
+                id: 2,
+                titleZh: "關卡 2：Kuromi 展場",
+                originalImage: "S__52166670.jpg",
+                diffImage: "S__52166670_1.jpg",
+                differences: [
+                    {
+                        x: 0.4018,
+                        y: 0.8750,
+                        radius: 0.0938,
+                        hintZh: "牛仔外套左邊胸前的扣子少了一顆。",
+                        hintEn: "One button on her denim jacket is gone."
+                    },
+                    {
+                        x: 0.6096,
+                        y: 0.8584,
+                        radius: 0.0938,
+                        hintZh: "她腳邊地板的亮點變暗了。",
+                        hintEn: "The light spot on the floor near her feet is darker."
+                    },
+                    {
+                        x: 0.6940,
+                        y: 0.2920,
+                        radius: 0.0938,
+                        hintZh: "黑色雕像右眼的線條變粗或變得不一樣。",
+                        hintEn: "The outline of Kuromi’s right eye is different."
+                    },
+                    {
+                        x: 0.5612,
+                        y: 0.0254,
+                        radius: 0.0938,
+                        hintZh: "她頭旁邊背景的一條白色漫畫線消失了。",
+                        hintEn: "A white speech bubble line in the background is missing."
+                    },
+                    {
+                        x: 0.6175,
+                        y: 0.1641,
+                        radius: 0.0938,
+                        hintZh: "她右邊的髮圈多了一個小紅點。",
+                        hintEn: "There is a small red dot on her hair tie."
+                    }
+                ]
+            },
 
-    <!-- 服務特色 -->
-    <section id="services" class="services">
-        <div class="container">
-            <div class="section-header">
-                <h2>我們的服務</h2>
-                <p>提供全方位的機場接送解決方案</p>
-            </div>
-            <div class="services-grid">
-                <div class="service-card">
-                    <div class="service-icon">
-                        <i class="fas fa-plane-arrival"></i>
-                    </div>
-                    <h3>機場接機</h3>
-                    <p>準時接機，專業司機舉牌等候</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">
-                        <i class="fas fa-plane-departure"></i>
-                    </div>
-                    <h3>機場送機</h3>
-                    <p>準時出發，確保您不會錯過航班</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <h3>24小時服務</h3>
-                    <p>全天候服務，隨時為您提供接送</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">
-                        <i class="fas fa-car"></i>
-                    </div>
-                    <h3>豪華車款</h3>
-                    <p>舒適的車內環境，讓您享受旅程</p>
-                </div>
-            </div>
-        </div>
-    </section>
+            // ＝＝＝ 第 3 關：洗車場 ＝＝＝
+            {
+                id: 3,
+                titleZh: "關卡 3：洗車時間",
+                originalImage: "S__52166669.jpg",
+                diffImage: "S__52166669_1.jpg",
+                differences: [
+                    {
+                        x: 0.1066,
+                        y: 0.3928,
+                        radius: 0.0859,
+                        hintZh: "車頭燈裡面少了一個小反光點。",
+                        hintEn: "One reflection inside the headlight is gone."
+                    },
+                    {
+                        x: 0.3843,
+                        y: 0.3627,
+                        radius: 0.0859,
+                        hintZh: "車窗下面多了一條很細的黑色線。",
+                        hintEn: "There is a new thin black line under the car window."
+                    },
+                    {
+                        x: 0.5088,
+                        y: 0.9112,
+                        radius: 0.0859,
+                        hintZh: "她腳邊地上的一小塊泡泡不見了。",
+                        hintEn: "Some foam on the ground near her feet is gone."
+                    },
+                    {
+                        x: 0.6434,
+                        y: 0.0590,
+                        radius: 0.0859,
+                        hintZh: "前檔風玻璃或車頭燈的反光跟原本不一樣。",
+                        hintEn: "The reflection on the windshield or headlight is different."
+                    },
+                    {
+                        x: 0.2941,
+                        y: 0.5997,
+                        radius: 0.0859,
+                        hintZh: "她手上的洗車海綿顏色變得比較淡。",
+                        hintEn: "The sponge in her hand is a lighter color."
+                    }
+                ]
+            }
+        ];
 
-    <!-- 價格方案 -->
-    <section id="pricing" class="pricing">
-        <div class="container">
-            <div class="section-header">
-                <h2>價格方案</h2>
-                <p>透明價格，無隱藏費用</p>
-            </div>
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>經濟型</h3>
-                        <div class="price">NT$ 800</div>
-                        <p>單程接送</p>
-                    </div>
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check"></i> 4人座轎車</li>
-                        <li><i class="fas fa-check"></i> 機場接送</li>
-                        <li><i class="fas fa-check"></i> 準時服務</li>
-                        <li><i class="fas fa-check"></i> 基本保險</li>
-                    </ul>
-                    <a href="#contact" class="btn btn-outline">選擇方案</a>
-                </div>
-                <div class="pricing-card featured">
-                    <div class="pricing-header">
-                        <h3>標準型</h3>
-                        <div class="price">NT$ 1,200</div>
-                        <p>單程接送</p>
-                    </div>
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check"></i> 7人座休旅車</li>
-                        <li><i class="fas fa-check"></i> 機場接送</li>
-                        <li><i class="fas fa-check"></i> 準時服務</li>
-                        <li><i class="fas fa-check"></i> 全險保障</li>
-                        <li><i class="fas fa-check"></i> 免費WiFi</li>
-                    </ul>
-                    <a href="#contact" class="btn btn-primary">選擇方案</a>
-                </div>
-                <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>豪華型</h3>
-                        <div class="price">NT$ 2,000</div>
-                        <p>單程接送</p>
-                    </div>
-                    <ul class="pricing-features">
-                        <li><i class="fas fa-check"></i> 豪華轎車</li>
-                        <li><i class="fas fa-check"></i> 機場接送</li>
-                        <li><i class="fas fa-check"></i> 專屬司機</li>
-                        <li><i class="fas fa-check"></i> 全險保障</li>
-                        <li><i class="fas fa-check"></i> 免費WiFi</li>
-                        <li><i class="fas fa-check"></i> 飲品服務</li>
-                    </ul>
-                    <a href="#contact" class="btn btn-outline">選擇方案</a>
-                </div>
-            </div>
-        </div>
-    </section>
+        const imageLeft = document.getElementById("image-left");
+        const imageRight = document.getElementById("image-right");
+        const labelLeft = document.getElementById("labelLeft");
+        const labelRight = document.getElementById("labelRight");
+        const leftImg = document.getElementById("image-left-img");
+        const rightImg = document.getElementById("image-right-img");
 
-    <!-- 關於我們 -->
-    <section id="about" class="about">
-        <div class="container">
-            <div class="about-content">
-                <div class="about-text">
-                    <h2>關於我們</h2>
-                    <p>我們是專業的哪都通提供商，擁有豐富的經驗和專業的團隊。我們致力於為客戶提供安全、舒適、準時的接送服務。</p>
-                    <div class="about-stats">
-                        <div class="stat">
-                            <div class="stat-number">1000+</div>
-                            <div class="stat-label">滿意客戶</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-number">5年+</div>
-                            <div class="stat-label">服務經驗</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-number">99%</div>
-                            <div class="stat-label">準時率</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="about-image">
-                    <div class="image-placeholder">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+        const levelNameEl = document.getElementById("levelName");
 
-    <!-- 聯絡我們 -->
-    <section id="contact" class="contact">
-        <div class="container">
-            <div class="section-header">
-                <h2>聯絡我們</h2>
-                <p>立即預約您的哪都通</p>
-                <p>填寫表單前請先加入官方Line</p>
-            </div>
-            <div class="contact-content">
-                <div class="contact-info">
-                    <div class="hero-qr" style="margin-top:10px;text-align:center;"><a href="https://line.me/R/oaMessage/%40805pmliw/?" target="_blank" rel="noopener"><img src="images/line-qr.png" alt="哪都通 LINE 官方 QR Code" width="160" height="160" style="display:inline-block;border:1px solid #eee;border-radius:8px;" loading="lazy"></a><div style="font-size:14px;color:#555;margin-top:6px;">點我加入官方Line</div></div>
+        const timeEl = document.getElementById("time");
+        const foundEl = document.getElementById("found");
+        const totalEl = document.getElementById("total");
+        const msgEl = document.getElementById("message");
 
-                </div>
-                <div class="contact-form">
-                    <form>
-                        <div class="form-group">
-                            <input type="text" placeholder="您的姓名" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="tel" placeholder="聯絡電話" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" placeholder="電子郵件">
-                        </div>
-                        <div class="form-group">
-                            <select required>
-                                <option value="">選擇服務類型</option>
-                                <option value="機場接機">機場接機</option>
-                                <option value="機場送機">機場送機</option>
-                                <option value="來回接送">來回接送</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <textarea placeholder="詳細需求說明" rows="4"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">送出預約</button>
-                    </form>
-                </div>
+        const btnRestart = document.getElementById("btnRestart");
+        const btnShowAll = document.getElementById("btnShowAll");
+        const btnHint = document.getElementById("btnHint");
+        const levelSelect = document.getElementById("levelSelect");
+        const langSelect = document.getElementById("langSelect");
 
+        let currentLevelIndex = 0;
+        let differences = [];
+        let foundFlags = [];
+        let timeLimit = 120;   // ★ 改成 2 分鐘
+        let timeLeft = timeLimit;
+        let timerId = null;
+        let gameOver = false;
+        let currentHintIndex = 0;
 
-            </div>
-        </div>
-    </section>
+        // --- 簡單可愛音效：用 Web Audio 產生小蜜蜂聲 ---
+        let audioCtx = null;
 
-    <!-- 頁腳 -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>哪都通</h3>
-                    <p>專業、安全、舒適的哪都通，讓您的旅程更加完美。</p>
-                </div>
-                <div class="footer-section">
-                    <h3>快速連結</h3>
-                    <ul>
-                        <li><a href="#home">首頁</a></li>
-                        <li><a href="#services">服務</a></li>
-                        <li><a href="#pricing">價格</a></li>
-                        <li><a href="#about">關於我們</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3>聯絡資訊</h3>
-                    <p><i class="fab fa-line"></i> 官方LINE:@805pmliw</p>
-                    <p><i class="fas fa-envelope"></i> v20241014@gmail.com</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 哪都通. 版權所有.</p>
-            </div>
-        </div>
-    </footer>
+        function getAudioCtx() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
+            }
+            return audioCtx;
+        }
 
-    <script src="script.js"></script>
+        function playBeep(freq, duration, type = "sine", volume = 0.25, delay = 0) {
+            const ctx = getAudioCtx();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.value = volume;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            const now = ctx.currentTime + delay;
+            osc.start(now);
+            osc.stop(now + duration);
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        }
+
+        function playCorrectSound() {
+            // 小小「叮噹」聲
+            playBeep(880, 0.12, "sine", 0.25, 0);
+            playBeep(1320, 0.14, "sine", 0.22, 0.08);
+        }
+
+        function playWinSound() {
+            // 過關「上升三音」
+            playBeep(880, 0.18, "triangle", 0.26, 0);
+            playBeep(1175, 0.18, "triangle", 0.24, 0.16);
+            playBeep(1568, 0.24, "triangle", 0.22, 0.32);
+        }
+
+        function loadLevel(index) {
+            currentLevelIndex = index;
+            const level = levels[index];
+
+            leftImg.src = level.originalImage;
+            rightImg.src = level.diffImage;
+            levelNameEl.textContent = level.titleZh;
+            labelLeft.textContent = "原圖";
+            labelRight.textContent = "找出 5 個不同的地方";
+
+            differences = level.differences;
+            totalEl.textContent = differences.length.toString();
+
+            currentHintIndex = 0;
+            msgEl.textContent = "先自己找找看～需要幫忙可以按「顯示提示」。";
+            startGame();
+        }
+
+        function startGame() {
+            // 清除舊標記
+            [...document.querySelectorAll(".marker")].forEach(el => el.remove());
+            imageRight.classList.remove("hit");
+
+            foundFlags = differences.map(() => false);
+            timeLeft = timeLimit;
+            gameOver = false;
+            timeEl.textContent = timeLeft.toString();
+            foundEl.textContent = "0";
+            btnShowAll.disabled = false;
+            btnHint.disabled = false;
+
+            if (timerId) clearInterval(timerId);
+            timerId = setInterval(() => {
+                timeLeft--;
+                if (timeLeft < 0) timeLeft = 0;
+                timeEl.textContent = timeLeft.toString();
+                if (timeLeft === 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        }
+
+        function endGame(isWin) {
+            if (gameOver) return;
+            gameOver = true;
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+            }
+            if (isWin) {
+                msgEl.textContent = "🎉 太厲害了！全部都找到囉～";
+                playWinSound();
+
+                // 1.5 秒後自動進入下一關（最後一關就顯示全部通關）
+                setTimeout(() => {
+                    if (currentLevelIndex < levels.length - 1) {
+                        const nextIndex = currentLevelIndex + 1;
+                        levelSelect.value = String(nextIndex);
+                        loadLevel(nextIndex);
+                    } else {
+                        msgEl.textContent = "🏆 全部通關！太強了！";
+                    }
+                }, 1500);
+            } else {
+                msgEl.textContent = "⌛ 時間到了，下次再挑戰看看！";
+            }
+        }
+
+        function addMarker(container, normX, normY) {
+            const marker = document.createElement("div");
+            marker.className = "marker";
+            marker.style.left = (normX * 100) + "%";
+            marker.style.top = (normY * 100) + "%";
+            container.appendChild(marker);
+        }
+
+        function handleClick(e) {
+            if (gameOver) return;
+
+            const rect = imageRight.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            const normX = clickX / rect.width;
+            const normY = clickY / rect.height;
+
+            let hitIndex = -1;
+
+            differences.forEach((diff, index) => {
+                if (foundFlags[index]) return;
+                const dx = normX - diff.x;
+                const dy = normY - diff.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance <= diff.radius) {
+                    hitIndex = index;
+                }
+            });
+
+            if (hitIndex >= 0) {
+                foundFlags[hitIndex] = true;
+
+                const diff = differences[hitIndex];
+                addMarker(imageRight, diff.x, diff.y);
+                addMarker(imageLeft, diff.x, diff.y);
+
+                const foundCount = foundFlags.filter(Boolean).length;
+                foundEl.textContent = foundCount.toString();
+                msgEl.textContent = "✅ 找到了一個！";
+                playCorrectSound();
+
+                // 小閃光特效
+                imageRight.classList.remove("hit");
+                void imageRight.offsetWidth; // 強制 reflow 讓動畫可以重播
+                imageRight.classList.add("hit");
+
+                if (foundCount === differences.length) {
+                    endGame(true);
+                }
+            } else {
+                msgEl.textContent = "👀 再仔細看看～";
+            }
+        }
+
+        function showAllAnswers() {
+            differences.forEach((diff, index) => {
+                if (!foundFlags[index]) {
+                    addMarker(imageRight, diff.x, diff.y);
+                    addMarker(imageLeft, diff.x, diff.y);
+                    foundFlags[index] = true;
+                }
+            });
+            const foundCount = foundFlags.filter(Boolean).length;
+            foundEl.textContent = foundCount.toString();
+            endGame(false);
+            btnShowAll.disabled = true;
+        }
+
+        function showHint() {
+            const level = levels[currentLevelIndex];
+            if (!level.differences.length) return;
+
+            const diff = level.differences[currentHintIndex];
+            const lang = langSelect.value;
+            const text = lang === "zh"
+                ? "提示：" + diff.hintZh
+                : "Hint: " + diff.hintEn;
+
+            msgEl.textContent = text;
+            currentHintIndex = (currentHintIndex + 1) % level.differences.length;
+        }
+
+        imageRight.addEventListener("click", handleClick);
+        btnRestart.addEventListener("click", () => startGame());
+        btnShowAll.addEventListener("click", showAllAnswers);
+        btnHint.addEventListener("click", showHint);
+
+        levelSelect.addEventListener("change", (e) => {
+            const idx = parseInt(e.target.value, 10) || 0;
+            loadLevel(idx);
+        });
+
+        // 一開始載入第一關
+        loadLevel(0);
+    </script>
 </body>
 </html>

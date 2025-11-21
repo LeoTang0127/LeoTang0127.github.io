@@ -1,0 +1,511 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>找不同關卡編輯器（標記工具）</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #ffe7f0, #e6f3ff);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+        }
+
+        .container {
+            background: #ffffffdd;
+            border-radius: 18px;
+            padding: 14px 16px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+            max-width: 1100px;
+            width: 100%;
+            margin: 10px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            font-size: 13px;
+        }
+
+            .toolbar label {
+                font-size: 13px;
+            }
+
+        input[type="file"] {
+            font-size: 13px;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+            .slider-group input[type=range] {
+                width: 120px;
+            }
+
+        .image-frame {
+            position: relative;
+            border-radius: 14px;
+            background: #f5f0ff;
+            border: 2px dashed #d0c4ff;
+            min-height: 340px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .image-frame.has-image {
+                border-style: solid;
+                border-color: #c4b5fd;
+                background: #000;
+            }
+
+        #imageCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+
+        .marker {
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid #ff6b6b;
+            box-shadow: 0 0 0 3px #ffffffaa;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            cursor: pointer;
+            animation: pop 0.2s ease-out;
+            background: transparent;
+        }
+
+            .marker:hover {
+                border-color: #f08c00;
+            }
+
+        @keyframes pop {
+            from {
+                transform: translate(-50%, -50%) scale(0.7);
+                opacity: 0;
+            }
+
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .panel-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pill {
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: #fff3cd;
+            font-size: 11px;
+        }
+
+        .marker-list {
+            border-radius: 10px;
+            background: #f8f9ff;
+            padding: 8px;
+            max-height: 200px;
+            overflow: auto;
+            font-size: 12px;
+        }
+
+        .marker-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px dashed #dde;
+            gap: 6px;
+        }
+
+            .marker-item:last-child {
+                border-bottom: none;
+            }
+
+        .marker-pos {
+            font-family: "Consolas", monospace;
+        }
+
+        .btn-small {
+            border: none;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            background: #ffe3e3;
+        }
+
+            .btn-small:hover {
+                background: #ffc9c9;
+            }
+
+        .btn-main {
+            border: none;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            background: #ffd8e8;
+            margin-right: 4px;
+        }
+
+            .btn-main.secondary {
+                background: #e7f5ff;
+            }
+
+            .btn-main:disabled {
+                opacity: 0.6;
+                cursor: default;
+            }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            border-radius: 10px;
+            border: 1px solid #ccd;
+            padding: 6px 8px;
+            font-size: 12px;
+            font-family: "Consolas", monospace;
+            resize: vertical;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #444;
+            min-height: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左側：圖片 + 標記 -->
+        <div class="left-panel">
+            <div>
+                <h1>找不同關卡編輯器 ✨</h1>
+                <div class="subtitle">
+                    1️⃣ 匯入圖片 → 2️⃣ 點圖新增標記 → 3️⃣ 複製 JSON → 用來修圖或丟進遊戲
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <label>
+                    匯入圖片：
+                    <input type="file" id="fileInput" accept="image/*">
+                </label>
+                <div class="slider-group">
+                    標記大小：
+                    <input type="range" id="radiusSlider" min="20" max="120" value="60">
+                    <span id="radiusLabel">60px</span>
+                </div>
+                <button class="btn-main secondary" id="btnUndo">復原上一個</button>
+                <button class="btn-main secondary" id="btnClear">清除全部</button>
+            </div>
+
+            <div class="image-frame" id="frame">
+                <span id="noImageHint" class="hint">請先上傳一張圖片，然後點選圖片來新增標記</span>
+                <img id="imageCanvas" style="display:none;" alt="預覽圖片">
+                <!-- marker 會動態插入 -->
+            </div>
+            <div class="hint">
+                💡 標記說明：每次點擊會新增一個紅圈圈。<br>
+                - 點錯可以直接點紅圈圈刪除，或用「復原上一個」回到上一個狀態。<br>
+                - 座標是 0~1 的比例值，跟實際像素無關，之後丟到遊戲時比較好用。
+            </div>
+        </div>
+
+        <!-- 右側：標記列表 + JSON -->
+        <div class="right-panel">
+            <div>
+                <div class="panel-title">
+                    🎯 標記列表
+                    <span class="pill">點圖新增 / 點圈刪除</span>
+                </div>
+                <div class="marker-list" id="markerList">
+                    目前尚未新增標記。
+                </div>
+            </div>
+
+            <div>
+                <div class="panel-title">
+                    📦 JSON 匯出（可貼到你的遊戲程式）
+                    <span class="pill">含 x, y, radius</span>
+                </div>
+                <textarea id="jsonOutput" readonly></textarea>
+                <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+                    <div class="status" id="statusText"></div>
+                    <div>
+                        <button class="btn-main" id="btnCopy">複製 JSON</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+  const fileInput = document.getElementById("fileInput");
+  const imageCanvas = document.getElementById("imageCanvas");
+  const frame = document.getElementById("frame");
+  const noImageHint = document.getElementById("noImageHint");
+
+  const radiusSlider = document.getElementById("radiusSlider");
+  const radiusLabel = document.getElementById("radiusLabel");
+
+  const markerListEl = document.getElementById("markerList");
+  const jsonOutput = document.getElementById("jsonOutput");
+  const statusText = document.getElementById("statusText");
+  const btnUndo = document.getElementById("btnUndo");
+  const btnClear = document.getElementById("btnClear");
+  const btnCopy = document.getElementById("btnCopy");
+
+  let markers = []; // { id, x, y, radius }
+  let historyStack = []; // 用來支援簡單 undo
+
+  radiusSlider.addEventListener("input", () => {
+    radiusLabel.textContent = radiusSlider.value + "px";
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    imageCanvas.src = url;
+    imageCanvas.style.display = "block";
+    frame.classList.add("has-image");
+    noImageHint.style.display = "none";
+    // 清掉之前的標記
+    clearMarkers(true);
+    statusText.textContent = "圖片載入完成，點圖片即可新增標記。";
+  });
+
+  // 點擊圖片框時新增標記
+  frame.addEventListener("click", (e) => {
+    if (!imageCanvas.src || e.target === fileInput) return;
+
+    const rect = imageCanvas.getBoundingClientRect();
+    const fx = e.clientX;
+    const fy = e.clientY;
+    if (fx < rect.left || fx > rect.right || fy < rect.top || fy > rect.bottom) {
+      return;
+    }
+
+    const clickX = fx - rect.left;
+    const clickY = fy - rect.top;
+    const normX = clickX / rect.width;
+    const normY = clickY / rect.height;
+
+    const radiusPx = parseInt(radiusSlider.value, 10);
+    const radiusNorm = radiusPx / rect.width;
+
+    addMarker(normX, normY, radiusNorm, radiusPx);
+    pushHistory(); // 記一個狀態，用於 Undo
+    statusText.textContent = `新增標記：x=${normX.toFixed(3)}, y=${normY.toFixed(3)}`;
+  });
+
+  function addMarker(x, y, radiusNorm, radiusPx) {
+    const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
+    markers.push({ id, x, y, radius: radiusNorm });
+
+    const markerEl = document.createElement("div");
+    markerEl.className = "marker";
+    markerEl.dataset.id = id;
+    markerEl.style.left = (x * 100) + "%";
+    markerEl.style.top = (y * 100) + "%";
+    markerEl.style.width = (radiusPx * 2) + "px";
+    markerEl.style.height = (radiusPx * 2) + "px";
+
+    markerEl.title = "點擊刪除此標記";
+    markerEl.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      removeMarker(id);
+      pushHistory();
+    });
+
+    frame.appendChild(markerEl);
+    renderMarkerList();
+    renderJson();
+  }
+
+  function removeMarker(id) {
+    markers = markers.filter(m => m.id !== id);
+    const el = frame.querySelector(`.marker[data-id="${id}"]`);
+    if (el) el.remove();
+    renderMarkerList();
+    renderJson();
+    statusText.textContent = "已刪除一個標記。";
+  }
+
+  function clearMarkers(skipHistory = false) {
+    markers = [];
+    [...frame.querySelectorAll(".marker")].forEach(el => el.remove());
+    renderMarkerList();
+    renderJson();
+    if (!skipHistory) pushHistory();
+    statusText.textContent = "已清除所有標記。";
+  }
+
+  function renderMarkerList() {
+    if (markers.length === 0) {
+      markerListEl.innerHTML = "目前尚未新增標記。";
+      return;
+    }
+    markerListEl.innerHTML = "";
+    markers.forEach((m, idx) => {
+      const item = document.createElement("div");
+      item.className = "marker-item";
+
+      const posSpan = document.createElement("span");
+      posSpan.className = "marker-pos";
+      posSpan.textContent =
+        `#${idx + 1}  x=${m.x.toFixed(3)}, y=${m.y.toFixed(3)}, r=${m.radius.toFixed(3)}`;
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "btn-small";
+      delBtn.textContent = "刪除";
+      delBtn.addEventListener("click", () => {
+        removeMarker(m.id);
+        pushHistory();
+      });
+
+      item.appendChild(posSpan);
+      item.appendChild(delBtn);
+      markerListEl.appendChild(item);
+    });
+  }
+
+  function renderJson() {
+    const data = markers.map(m => ({
+      x: Number(m.x.toFixed(4)),
+      y: Number(m.y.toFixed(4)),
+      radius: Number(m.radius.toFixed(4))
+    }));
+    jsonOutput.value = JSON.stringify(data, null, 2);
+  }
+
+  // 簡單 Undo：存一份 markers 的快照
+  function pushHistory() {
+    historyStack.push(JSON.stringify(markers));
+    if (historyStack.length > 50) {
+      historyStack.shift();
+    }
+  }
+
+  btnUndo.addEventListener("click", () => {
+    if (historyStack.length <= 1) {
+      statusText.textContent = "沒有可以復原的紀錄。";
+      return;
+    }
+    // 拿掉最新一個，回到上一個
+    historyStack.pop();
+    const prev = historyStack[historyStack.length - 1];
+    markers = JSON.parse(prev || "[]");
+    // 重畫畫面上的 marker
+    [...frame.querySelectorAll(".marker")].forEach(el => el.remove());
+
+    const rect = imageCanvas.getBoundingClientRect();
+    const radiusPxDefault = parseInt(radiusSlider.value, 10);
+    markers.forEach(m => {
+      const markerEl = document.createElement("div");
+      markerEl.className = "marker";
+      markerEl.dataset.id = m.id;
+      markerEl.style.left = (m.x * 100) + "%";
+      markerEl.style.top = (m.y * 100) + "%";
+      const px = m.radius * rect.width || radiusPxDefault;
+      markerEl.style.width = (px * 2) + "px";
+      markerEl.style.height = (px * 2) + "px";
+      markerEl.title = "點擊刪除此標記";
+      markerEl.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        removeMarker(m.id);
+        pushHistory();
+      });
+      frame.appendChild(markerEl);
+    });
+
+    renderMarkerList();
+    renderJson();
+    statusText.textContent = "已復原上一個動作。";
+  });
+
+  btnClear.addEventListener("click", () => {
+    if (markers.length === 0) return;
+    if (confirm("確定要清除所有標記嗎？")) {
+      clearMarkers();
+    }
+  });
+
+  btnCopy.addEventListener("click", async () => {
+    const text = jsonOutput.value.trim();
+    if (!text) {
+      statusText.textContent = "沒有內容可以複製。";
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      statusText.textContent = "JSON 已複製到剪貼簿。";
+    } catch {
+      statusText.textContent = "瀏覽器不支援自動複製，請手動選取複製。";
+    }
+  });
+
+  // 初始化 history（空狀態）
+  pushHistory();
+    </script>
+</body>
+</html>
