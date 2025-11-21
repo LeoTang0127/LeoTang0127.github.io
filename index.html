@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>找不同小遊戲（手機修復版）</title>
+    <title>找不同小遊戲（全螢幕適配版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,12 +13,13 @@
             font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #ffe7f0, #e6f3ff);
             margin: 0;
-            min-height: 100vh;
+            /* 這裡改為 100vh 並隱藏 overflow，是為了讓橫向模式像 App 一樣固定 */
+            height: 100vh;
+            width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* 確保手機上如果有內容溢出可以捲動 */
-            overflow-x: hidden; 
+            overflow: hidden; 
         }
 
         .game-container {
@@ -28,7 +29,9 @@
             box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
             max-width: 920px;
             width: 100%;
-            /* 加上過場動畫讓切換順暢 */
+            max-height: 100vh; /* 限制最大高度 */
+            display: flex;
+            flex-direction: column;
             transition: all 0.3s ease;
         }
 
@@ -38,6 +41,7 @@
             justify-content: space-between;
             gap: 12px;
             margin-bottom: 10px;
+            flex-shrink: 0; /* 防止頭部被壓縮 */
         }
 
         .title {
@@ -46,7 +50,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            flex-wrap: wrap; /* 允許標題過長時換行 */
         }
 
         .pill {
@@ -61,7 +64,6 @@
             display: flex;
             gap: 8px;
             font-size: 14px;
-            flex-wrap: wrap;
             justify-content: flex-end;
         }
 
@@ -83,11 +85,17 @@
             cursor: pointer;
         }
 
+        /* 遊戲區域容器 */
         .board {
             margin-top: 8px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
+            /* 讓 Board 佔據剩餘空間，為了橫向模式 */
+            flex: 1; 
+            min-height: 0; /* 重要！讓 flex 子元素可以縮小 */
+            justify-items: center; /* 水平置中 */
+            align-items: center;   /* 垂直置中 */
         }
 
         .image-wrapper {
@@ -96,25 +104,36 @@
             border-radius: 16px;
             overflow: hidden;
             border: 2px solid #f0e2ff;
-            /* 電腦版保留最小高度，避免沒圖時塌陷 */
-            min-height: 260px; 
-            display: flex;       /* 讓圖片置中 */
+            display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
+            /* 讓 wrapper 盡可能填滿格子，但不超過內容 */
+            max-width: 100%;
+            max-height: 100%; 
         }
 
         .image-inner {
             position: relative;
-            /* 關鍵：這裡不能設固定寬高，要隨圖片撐開 */
-            width: 100%; 
-            line-height: 0; /* 消除圖片下方的空白間隙 */
+            /* 讓 inner 緊貼圖片大小 */
+            display: inline-block; 
+            line-height: 0;
         }
 
         .game-img {
             display: block;
-            width: 100%;      /* 寬度佔滿容器 */
-            height: auto;     /* 高度自動，保持比例 */
-            object-fit: contain; /* 確保圖片完整顯示 */
+            /* 限制圖片最大不超過容器，保持比例 */
+            max-width: 100%;
+            max-height: 60vh; /* 電腦版預設 */
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+        
+        /* 電腦版稍微放寬高度限制 */
+        @media (min-width: 769px) {
+             .game-img {
+                max-height: 65vh; 
+             }
         }
 
         .image-label {
@@ -125,7 +144,7 @@
             border-radius: 999px;
             background: #ffffffdd;
             font-size: 13px;
-            pointer-events: none; /* 避免擋住點擊 */
+            pointer-events: none;
             z-index: 10;
         }
 
@@ -157,13 +176,13 @@
         }
 
         .footer {
-            margin-top: 15px;
+            margin-top: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 14px;
             gap: 8px;
-            flex-wrap: wrap;
+            flex-shrink: 0; /* 防止底部被壓縮 */
         }
 
         .message {
@@ -175,22 +194,16 @@
         .btn-row {
             display: flex;
             gap: 6px;
-            flex-wrap: wrap;
             justify-content: flex-end;
         }
 
         button {
             border: none;
             border-radius: 999px;
-            padding: 8px 16px;
+            padding: 6px 12px;
             font-size: 13px;
             cursor: pointer;
             background: #ffd8e8;
-            transition: background 0.2s;
-        }
-
-        button:active {
-            transform: scale(0.95);
         }
 
         button.secondary {
@@ -206,86 +219,155 @@
             border-radius: 999px;
             border: none;
             background: #f3f6ff;
-            padding: 6px 12px;
+            padding: 4px 8px;
             font-size: 13px;
-            cursor: pointer;
         }
 
-        /* === 手機版排版修正 === */
-        @media (max-width: 768px) {
+        /* === 手機直向 (Portrait) === */
+        /* 當螢幕寬度小，且高度大於寬度時 */
+        @media (max-width: 768px) and (aspect-ratio: 1/1), 
+               (max-width: 768px) and (orientation: portrait) {
+            
             body {
-                display: block; /* 取消 flex 置中，讓頁面自然流動 */
                 height: auto;
-                padding: 10px; /* 給邊邊一點留白 */
+                min-height: 100vh;
+                overflow-y: auto; /* 允許捲動 */
+                display: block;
+                padding: 10px;
             }
 
             .game-container {
-                height: auto;      /* ❗重要：取消固定高度，隨內容長高 */
-                min-height: auto;  /* 取消 min-height */
+                height: auto;
+                max-height: none;
                 padding: 12px;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* 手機上保留一點陰影 */
             }
 
             .board {
-                /* ❗重要：手機改為上下排列 (1欄) */
-                grid-template-columns: 1fr; 
-                gap: 15px;
+                grid-template-columns: 1fr; /* 上下排列 */
+                gap: 10px;
+                flex: none; /* 取消彈性伸縮，由內容撐開 */
             }
 
-            .image-wrapper {
-                min-height: auto; /* 手機版不強制最小高度，依照圖片比例 */
+            .game-img {
+                max-height: none; /* 取消高度限制 */
+                width: 100%;      /* 寬度滿版 */
             }
-            
-            .header {
+
+            .header, .footer {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
                 gap: 8px;
             }
-
-            .title {
-                font-size: 18px;
-                width: 100%;
-                justify-content: space-between; /* 讓標題跟 Pill 分開 */
-            }
-
+            
             .stats {
-                width: 100%;
-                justify-content: space-between; /* 資訊分散對齊 */
-                background: #f8f9fa;
-                padding: 8px;
-                border-radius: 8px;
-            }
-
-            .stats span {
-                background: transparent;
-                padding: 0;
-                font-size: 12px;
-            }
-
-            .footer {
-                flex-direction: column;
-                align-items: stretch; /* 按鈕滿版 */
-                gap: 12px;
-            }
-
-            .message {
-                text-align: center;
-                background: #fff0f5;
-                padding: 8px;
-                border-radius: 8px;
+                justify-content: space-between;
             }
 
             .btn-row {
                 justify-content: space-between;
             }
             
-            .btn-row button, .btn-row select {
-                flex: 1; /* 按鈕平均分配寬度 */
+            .btn-row button {
+                flex: 1;
                 text-align: center;
-                padding: 10px 0; /* 增加手機點擊區域 */
             }
         }
+
+        /* === 手機橫向 (Landscape) 特別優化 === */
+        /* 當高度很小 (例如 < 500px) 且是橫向時 */
+        @media (max-height: 500px) and (orientation: landscape) {
+            body {
+                padding: 0;
+                height: 100vh;
+                overflow: hidden; /* 禁止捲動，強制單頁 */
+                align-items: center;
+            }
+
+            .game-container {
+                width: 100%;
+                height: 100%;
+                border-radius: 0;
+                padding: 4px 10px; /* 極窄邊距 */
+                max-width: none;
+                justify-content: center;
+            }
+
+            .header {
+                margin-bottom: 4px;
+                gap: 8px;
+            }
+
+            .title {
+                font-size: 16px; /* 字體縮小 */
+            }
+            
+            .pill {
+                padding: 2px 8px;
+                font-size: 12px;
+            }
+
+            .stats {
+                font-size: 12px;
+            }
+            
+            .stats span {
+                padding: 2px 6px;
+            }
+
+            .board {
+                /* 核心：維持左右並排，但根據高度自動縮放 */
+                grid-template-columns: 1fr 1fr; 
+                gap: 8px;
+                margin-top: 2px;
+                height: 100%; /* 佔滿中間區域 */
+                overflow: hidden;
+            }
+
+            .image-wrapper {
+                height: 100%;     /* 容器高度撐滿 Board */
+                width: auto;      /* 寬度自動 */
+                border-width: 1px;
+                background: transparent; /* 減少視覺干擾 */
+                border: none;     /* 橫向時拿掉邊框省空間 */
+            }
+
+            .image-inner {
+                height: 100%; /* Inner 跟隨高度 */
+                width: auto;
+            }
+
+            .game-img {
+                height: 100%; /* ❗關鍵：圖片高度 100% 填滿父容器 */
+                width: auto;  /* 寬度自動維持比例 */
+                max-height: none; /* 覆寫原本設定 */
+            }
+
+            /* 橫向模式隱藏一些不必要的標籤以節省空間 */
+            .image-label {
+                display: none;
+            }
+
+            .footer {
+                margin-top: 4px;
+                gap: 4px;
+            }
+
+            .message {
+                font-size: 12px;
+                min-height: auto;
+            }
+
+            button {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+            
+            /* 微調按鈕列，讓提示選單不要太寬 */
+            .btn-row select {
+                width: auto;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -299,11 +381,10 @@
                 <span>⏱ <strong id="time">120</strong>s</span>
                 <span>✅ <strong id="found">0</strong>/<span id="total">5</span></span>
                 <span>
-                    關卡:
                     <select id="levelSelect">
-                        <option value="0">1</option>
-                        <option value="1">2</option>
-                        <option value="2">3</option>
+                        <option value="0">Lv.1</option>
+                        <option value="1">Lv.2</option>
+                        <option value="2">Lv.3</option>
                     </select>
                 </span>
             </div>
@@ -329,8 +410,8 @@
             <div class="message" id="message"></div>
             <div class="btn-row">
                 <select id="langSelect">
-                    <option value="zh">提示:中</option>
-                    <option value="en">Hint:En</option>
+                    <option value="zh">中文</option>
+                    <option value="en">EN</option>
                 </select>
                 <button id="btnHint" class="secondary">提示</button>
                 <button id="btnRestart">重來</button>
@@ -342,7 +423,6 @@
     <script>
         // === 三個關卡設定 ===
         const levels = [
-            // ＝＝＝ 第 1 關：小熊森林 ＝＝＝
             {
                 id: 1,
                 titleZh: "關卡 1：熊熊森林",
@@ -356,7 +436,6 @@
                     { x: 0.4716, y: 0.8720, radius: 0.0859, hintZh: "最左邊那根木頭圍欄不見了或變短。", hintEn: "One wooden fence post on the left is missing." }
                 ]
             },
-            // ＝＝＝ 第 2 關：室內 Kuromi 雕像 ＝＝＝
             {
                 id: 2,
                 titleZh: "關卡 2：Kuromi 展場",
@@ -370,7 +449,6 @@
                     { x: 0.6175, y: 0.1641, radius: 0.0938, hintZh: "她右邊的髮圈多了一個小紅點。", hintEn: "There is a small red dot on her hair tie." }
                 ]
             },
-            // ＝＝＝ 第 3 關：洗車場 ＝＝＝
             {
                 id: 3,
                 titleZh: "關卡 3：洗車時間",
@@ -392,14 +470,11 @@
         const labelRight = document.getElementById("labelRight");
         const leftImg = document.getElementById("image-left-img");
         const rightImg = document.getElementById("image-right-img");
-
         const levelNameEl = document.getElementById("levelName");
-
         const timeEl = document.getElementById("time");
         const foundEl = document.getElementById("found");
         const totalEl = document.getElementById("total");
         const msgEl = document.getElementById("message");
-
         const btnRestart = document.getElementById("btnRestart");
         const btnShowAll = document.getElementById("btnShowAll");
         const btnHint = document.getElementById("btnHint");
@@ -415,9 +490,8 @@
         let gameOver = false;
         let currentHintIndex = 0;
 
-        // --- 音效設定 ---
+        // 音效 (Web Audio API)
         let audioCtx = null;
-
         function getAudioCtx() {
             if (!audioCtx) {
                 const AC = window.AudioContext || window.webkitAudioContext;
@@ -425,7 +499,6 @@
             }
             return audioCtx;
         }
-
         function playBeep(freq, duration, type = "sine", volume = 0.25, delay = 0) {
             const ctx = getAudioCtx();
             if (!ctx) return;
@@ -442,12 +515,10 @@
             gain.gain.setValueAtTime(volume, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
         }
-
         function playCorrectSound() {
             playBeep(880, 0.12, "sine", 0.25, 0);
             playBeep(1320, 0.14, "sine", 0.22, 0.08);
         }
-
         function playWinSound() {
             playBeep(880, 0.18, "triangle", 0.26, 0);
             playBeep(1175, 0.18, "triangle", 0.24, 0.16);
@@ -457,25 +528,21 @@
         function loadLevel(index) {
             currentLevelIndex = index;
             const level = levels[index];
-
             leftImg.src = level.originalImage;
             rightImg.src = level.diffImage;
             levelNameEl.textContent = level.titleZh;
             labelLeft.textContent = "原圖";
-            labelRight.textContent = "請點擊不同處";
-
+            labelRight.textContent = "點擊不同處";
             differences = level.differences;
             totalEl.textContent = differences.length.toString();
-
             currentHintIndex = 0;
-            msgEl.textContent = "遊戲開始！請找出 " + differences.length + " 個不同之處。";
+            msgEl.textContent = "遊戲開始！";
             startGame();
         }
 
         function startGame() {
             [...document.querySelectorAll(".marker")].forEach(el => el.remove());
             imageRight.classList.remove("hit");
-
             foundFlags = differences.map(() => false);
             timeLeft = timeLimit;
             gameOver = false;
@@ -483,15 +550,12 @@
             foundEl.textContent = "0";
             btnShowAll.disabled = false;
             btnHint.disabled = false;
-
             if (timerId) clearInterval(timerId);
             timerId = setInterval(() => {
                 timeLeft--;
                 if (timeLeft < 0) timeLeft = 0;
                 timeEl.textContent = timeLeft.toString();
-                if (timeLeft === 0) {
-                    endGame(false);
-                }
+                if (timeLeft === 0) endGame(false);
             }, 1000);
         }
 
@@ -503,7 +567,7 @@
                 timerId = null;
             }
             if (isWin) {
-                msgEl.textContent = "🎉 太厲害了！全部都找到囉～";
+                msgEl.textContent = "🎉 通關成功！";
                 playWinSound();
                 setTimeout(() => {
                     if (currentLevelIndex < levels.length - 1) {
@@ -511,11 +575,11 @@
                         levelSelect.value = String(nextIndex);
                         loadLevel(nextIndex);
                     } else {
-                        msgEl.textContent = "🏆 全部通關！太強了！";
+                        msgEl.textContent = "🏆 全部通關！";
                     }
                 }, 1500);
             } else {
-                msgEl.textContent = "⌛ 時間到了，下次再挑戰看看！";
+                msgEl.textContent = "⌛ 時間到！";
             }
         }
 
@@ -528,32 +592,22 @@
         }
 
         function handleClick(e) {
-            // 為了讓手機點擊更順暢，先嘗試啟動 AudioContext (手機瀏覽器限制)
             if(!audioCtx) getAudioCtx();
-
             if (gameOver) return;
 
-            // 注意：改為上下排列後，getBoundingClientRect() 依然能抓到正確的寬高，座標計算邏輯不用變
             const rect = imageRight.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const clickY = e.clientY - rect.top;
-
             const normX = clickX / rect.width;
             const normY = clickY / rect.height;
 
             let hitIndex = -1;
-
             differences.forEach((diff, index) => {
                 if (foundFlags[index]) return;
-                // 這裡做一點小修正：如果圖片被拉長或變大，判斷距離的寬容度可以稍微調整
-                // 這裡維持原樣，因為 radius 是正規化後的比例
                 const dx = normX - diff.x;
                 const dy = normY - diff.y;
-                // 針對長寬比不同，可考慮各自加權，但簡單版直接算歐式距離即可
                 const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance <= diff.radius) {
-                    hitIndex = index;
-                }
+                if (distance <= diff.radius) hitIndex = index;
             });
 
             if (hitIndex >= 0) {
@@ -561,21 +615,16 @@
                 const diff = differences[hitIndex];
                 addMarker(imageRight, diff.x, diff.y);
                 addMarker(imageLeft, diff.x, diff.y);
-
                 const foundCount = foundFlags.filter(Boolean).length;
                 foundEl.textContent = foundCount.toString();
-                msgEl.textContent = "✅ 找到了一個！";
+                msgEl.textContent = "✅ 找到一個！";
                 playCorrectSound();
-
                 imageRight.classList.remove("hit");
-                void imageRight.offsetWidth; 
+                void imageRight.offsetWidth;
                 imageRight.classList.add("hit");
-
-                if (foundCount === differences.length) {
-                    endGame(true);
-                }
+                if (foundCount === differences.length) endGame(true);
             } else {
-                msgEl.textContent = "👀 再仔細看看～";
+                msgEl.textContent = "👀 再仔細看！";
             }
         }
 
@@ -587,8 +636,7 @@
                     foundFlags[index] = true;
                 }
             });
-            const foundCount = foundFlags.filter(Boolean).length;
-            foundEl.textContent = foundCount.toString();
+            foundEl.textContent = foundFlags.filter(Boolean).length.toString();
             endGame(false);
             btnShowAll.disabled = true;
         }
@@ -596,13 +644,9 @@
         function showHint() {
             const level = levels[currentLevelIndex];
             if (!level.differences.length) return;
-
             const diff = level.differences[currentHintIndex];
             const lang = langSelect.value;
-            const text = lang === "zh"
-                ? "提示：" + diff.hintZh
-                : "Hint: " + diff.hintEn;
-
+            const text = lang === "zh" ? "提示：" + diff.hintZh : "Hint: " + diff.hintEn;
             msgEl.textContent = text;
             currentHintIndex = (currentHintIndex + 1) % level.differences.length;
         }
@@ -611,11 +655,7 @@
         btnRestart.addEventListener("click", () => startGame());
         btnShowAll.addEventListener("click", showAllAnswers);
         btnHint.addEventListener("click", showHint);
-
-        levelSelect.addEventListener("change", (e) => {
-            const idx = parseInt(e.target.value, 10) || 0;
-            loadLevel(idx);
-        });
+        levelSelect.addEventListener("change", (e) => loadLevel(parseInt(e.target.value, 10) || 0));
 
         loadLevel(0);
     </script>
