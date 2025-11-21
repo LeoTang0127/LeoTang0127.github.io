@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>安安來找不同</title>
+    <title>安安來找大不同</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -14,13 +15,12 @@
             background: #f0f4f8;
             margin: 0;
             padding: 0;
-            /* 使用 svh 確保扣除手機網址列 */
             height: 100svh;
             width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* 禁止整個頁面捲動（橫向模式用） */
+            overflow: hidden; 
         }
 
         .game-container {
@@ -35,14 +35,14 @@
 
         /* === 頭部 (Header) === */
         .header {
-            flex-shrink: 0; /* 禁止壓縮 */
+            flex-shrink: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding-bottom: 8px;
             border-bottom: 1px solid #eee;
             margin-bottom: 8px;
-            height: 40px; /* 固定高度 */
+            height: 40px;
         }
 
         .title { font-weight: bold; font-size: 16px; }
@@ -50,8 +50,8 @@
 
         /* === 遊戲區 (Board) === */
         .board {
-            flex: 1; /* 佔滿剩餘空間 */
-            min-height: 0; /* ❗允許 Flex 子元素縮小 */
+            flex: 1;
+            min-height: 0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -88,16 +88,22 @@
             position: absolute;
             width: 30px;
             height: 30px;
-            border: 3px solid red;
+            border: 3px solid #ff4757;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             pointer-events: none;
-            box-shadow: 0 0 0 2px white;
+            box-shadow: 0 0 0 2px white, 0 0 10px rgba(255, 71, 87, 0.5);
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop {
+            from { transform: translate(-50%, -50%) scale(0); }
+            to { transform: translate(-50%, -50%) scale(1); }
         }
 
         /* === 底部 (Footer) === */
         .footer {
-            flex-shrink: 0; /* 禁止壓縮 */
+            flex-shrink: 0;
             height: 40px;
             display: flex;
             justify-content: space-between;
@@ -105,95 +111,60 @@
             border-top: 1px solid #eee;
             padding-top: 6px;
             margin-top: 6px;
+            gap: 5px;
         }
 
         button {
-            padding: 4px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
             border: 1px solid #ccc;
             background: #f8f9fa;
             font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        
+        button:active { transform: scale(0.95); }
+        button:disabled { opacity: 0.5; }
+
+        /* 音樂按鈕啟用狀態 */
+        button.music-on {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #0d47a1;
         }
 
         /* ================================================= */
-        /* 📱 模式 1：手機直向 (Portrait) -> 上下捲動模式 */
+        /* 📱 模式 1：手機直向 */
         /* ================================================= */
         @media (orientation: portrait) {
             body {
-                height: auto; /* 解除高度限制 */
+                height: auto;
                 min-height: 100svh;
-                overflow-y: auto; /* 允許捲動 */
+                overflow-y: auto;
                 display: block;
             }
-
-            .game-container {
-                height: auto;
-                min-height: 100svh;
-            }
-
-            .board {
-                flex-direction: column; /* 上下排 */
-                height: auto;
-                flex: none; /* 取消彈性 */
-            }
-
-            .image-wrapper {
-                width: 100%;
-                height: auto;
-                flex: none;
-                margin-bottom: 10px;
-            }
-
-            .game-img {
-                width: 100%;
-                height: auto;
-            }
+            .game-container { height: auto; min-height: 100svh; }
+            .board { flex-direction: column; height: auto; flex: none; }
+            .image-wrapper { width: 100%; height: auto; flex: none; margin-bottom: 10px; }
+            .game-img { width: 100%; height: auto; }
         }
 
         /* ================================================= */
-        /* 📱 模式 2：手機橫向 (Landscape) -> 並排不捲動 */
+        /* 📱 模式 2：手機橫向 */
         /* ================================================= */
         @media (orientation: landscape) {
-            /* body 保持 overflow:hidden、flex 置中 */
-
-            .game-container {
-                padding: 4px 10px;
-            }
-
-            .header, .footer {
-                height: 30px;
-                margin: 2px 0;
-                font-size: 12px;
-            }
-
-            .board {
-                flex-direction: row; /* 左右並排 */
-                align-items: center;
-                height: 100%;
-            }
-
+            .game-container { padding: 4px 10px; }
+            .header, .footer { height: 30px; margin: 2px 0; font-size: 12px; }
+            .board { flex-direction: row; align-items: center; height: 100%; }
             .image-wrapper {
-                height: 100%;
-                width: auto;
-                background: transparent;
-                border: none;
-                max-width: 48vw;  /* 每張最多半個螢幕寬 */
+                height: 100%; width: auto; background: transparent; border: none;
+                max-width: 48vw;
             }
-
-            .image-inner {
-                height: 100%;
-                width: auto;
-            }
-
-            .game-img {
-                height: 100%;
-                width: auto;
-                max-width: 100%;
-            }
-
-            /* 隱藏佔空間的元素 */
-            .title span:first-child { display: none; } /* 隱藏 emoji */
-            /* 若你之後加 labelLeft/Right 再隱藏即可 */
+            .image-inner { height: 100%; width: auto; }
+            .game-img { height: 100%; width: auto; max-width: 100%; }
+            .title span:first-child { display: none; }
         }
     </style>
 </head>
@@ -229,10 +200,11 @@
         </div>
 
         <div class="footer">
-            <div id="message" style="flex:1; font-size:12px; color:#666;">開始遊戲</div>
-            <button id="btnHint">提示</button>
-            <button id="btnRestart" style="margin-left:5px;">重來</button>
-            <button id="btnShowAll" style="margin-left:5px;">解答</button>
+            <button id="btnMusic">🔇 音樂</button>
+            <div id="message" style="flex:1; font-size:12px; color:#666; text-align:center;">開始遊戲</div>
+            <button id="btnHint">💡 提示</button>
+            <button id="btnRestart">🔄 重來</button>
+            <button id="btnShowAll">👁️ 解答</button>
         </div>
     </div>
 
@@ -240,73 +212,132 @@
         // === 遊戲資料 ===
         const levels = [
             {
-                id: 1,
-                name: "L1: 森林",
-                img1: "S__52166671.jpg",
-                img2: "S__52166671_1.png",
-                diffs: [
-                    { x: 0.5675, y: 0.3207, r: 0.08 },
-                    { x: 0.4029, y: 0.2252, r: 0.08 },
-                    { x: 0.7622, y: 0.2259, r: 0.08 },
-                    { x: 0.2641, y: 0.915,  r: 0.08 },
-                    { x: 0.4716, y: 0.872,  r: 0.08 }
-                ],
+                id: 1, name: "L1: 森林", img1: "S__52166671.jpg", img2: "S__52166671_1.png",
+                diffs: [{x:0.5675,y:0.3207,r:0.08},{x:0.4029,y:0.2252,r:0.08},{x:0.7622,y:0.2259,r:0.08},{x:0.2641,y:0.915,r:0.08},{x:0.4716,y:0.872,r:0.08}],
                 hints: ["手套顏色", "帽子星星", "氣球棒", "鞋帶", "圍欄"]
             },
             {
-                id: 2,
-                name: "L2: 展場",
-                img1: "S__52166670.jpg",
-                img2: "S__52166670_1.jpg",
-                diffs: [
-                    { x: 0.4018, y: 0.875,  r: 0.09 },
-                    { x: 0.6096, y: 0.8584, r: 0.09 },
-                    { x: 0.694,  y: 0.292,  r: 0.09 },
-                    { x: 0.5612, y: 0.0254, r: 0.09 },
-                    { x: 0.6175, y: 0.1641, r: 0.09 }
-                ],
+                id: 2, name: "L2: 展場", img1: "S__52166670.jpg", img2: "S__52166670_1.jpg",
+                diffs: [{x:0.4018,y:0.875,r:0.09},{x:0.6096,y:0.8584,r:0.09},{x:0.694,y:0.292,r:0.09},{x:0.5612,y:0.0254,r:0.09},{x:0.6175,y:0.1641,r:0.09}],
                 hints: ["扣子", "地板亮點", "眼睛線條", "背景線條", "髮圈"]
             },
             {
-                id: 3,
-                name: "L3: 洗車",
-                img1: "S__52166669.jpg",
-                img2: "S__52166669_1.jpg",
-                diffs: [
-                    { x: 0.1066, y: 0.3928, r: 0.08 },
-                    { x: 0.3843, y: 0.3627, r: 0.08 },
-                    { x: 0.5088, y: 0.9112, r: 0.08 },
-                    { x: 0.6434, y: 0.059,  r: 0.08 },
-                    { x: 0.2941, y: 0.5997, r: 0.08 }
-                ],
+                id: 3, name: "L3: 洗車", img1: "S__52166669.jpg", img2: "S__52166669_1.jpg",
+                diffs: [{x:0.1066,y:0.3928,r:0.08},{x:0.3843,y:0.3627,r:0.08},{x:0.5088,y:0.9112,r:0.08},{x:0.6434,y:0.059,r:0.08},{x:0.2941,y:0.5997,r:0.08}],
                 hints: ["車燈反光", "車窗黑線", "地上泡泡", "玻璃反光", "海綿顏色"]
             }
         ];
 
-        let curLv = 0,
-            found = [],
-            timeLeft = 120,
-            timer = null,
-            isOver = false,
-            hintIdx = 0;
-
+        let curLv = 0, found = [], timeLeft = 120, timer = null, isOver = false, hintIdx = 0;
         const el = (id) => document.getElementById(id);
 
-        // 音效
+        // === 🎵 音樂與音效系統 (使用 Web Audio API 生成，無需外部檔案) ===
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let bgmOscillators = []; // 存放 BGM 的音源
+        let isMusicPlaying = false;
+
+        // 1. 播放單次音效 (Hit, Win, Lose)
         const playSound = (type) => {
-            const AC = window.AudioContext || window.webkitAudioContext;
-            if (!AC) return;
-            const ctx = new AC();
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
+            if (audioCtx.state === 'suspended') audioCtx.resume(); // 確保音訊啟動
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
             osc.connect(g);
-            g.connect(ctx.destination);
-            osc.frequency.value = type === "win" ? 880 : (type === "hit" ? 600 : 300);
-            osc.type = type === "win" ? "triangle" : "sine";
-            osc.start();
-            g.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
-            osc.stop(ctx.currentTime + 0.3);
+            g.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            
+            if (type === "win") {
+                // 勝利音效：上升的琶音
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                g.gain.setValueAtTime(0.1, now);
+                g.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            } else if (type === "hit") {
+                // 答對音效：清脆的高音
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(880, now);
+                g.gain.setValueAtTime(0.1, now);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else {
+                // 提示或其他：低音
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(300, now);
+                g.gain.setValueAtTime(0.1, now);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
         };
+
+        // 2. 背景音樂 (BGM) - 生成簡單的循環旋律
+        function startBGM() {
+            if (bgmOscillators.length > 0) return; // 已經在播放
+            
+            const createNote = (freq, startTime, duration) => {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                osc.connect(g);
+                g.connect(audioCtx.destination);
+                
+                // 淡入淡出讓聲音柔和
+                g.gain.setValueAtTime(0, startTime);
+                g.gain.linearRampToValueAtTime(0.03, startTime + 0.1); // 很小聲，避免吵
+                g.gain.linearRampToValueAtTime(0, startTime + duration - 0.1);
+                
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+                bgmOscillators.push(osc);
+            };
+
+            // 簡單的旋律循環 (C Major)
+            const melody = [523.25, 659.25, 783.99, 659.25, 523.25, 392.00, 329.63, 392.00]; 
+            const interval = 0.5; // 每個音的間隔
+            
+            const loop = () => {
+                if (!isMusicPlaying) return;
+                const now = audioCtx.currentTime;
+                melody.forEach((freq, index) => {
+                    createNote(freq, now + index * interval, interval);
+                });
+                // 遞迴呼叫自己，實現循環
+                setTimeout(loop, melody.length * interval * 1000); 
+            };
+            loop();
+        }
+
+        function stopBGM() {
+            bgmOscillators.forEach(osc => {
+                try { osc.stop(); } catch(e){}
+            });
+            bgmOscillators = [];
+        }
+
+        // 音樂開關按鈕邏輯
+        el("btnMusic").onclick = () => {
+            isMusicPlaying = !isMusicPlaying;
+            const btn = el("btnMusic");
+            if (isMusicPlaying) {
+                btn.innerText = "🎵 音樂";
+                btn.classList.add("music-on");
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                startBGM();
+            } else {
+                btn.innerText = "🔇 音樂";
+                btn.classList.remove("music-on");
+                stopBGM();
+            }
+        };
+
+        // === 遊戲核心邏輯 ===
 
         function loadLevel(idx) {
             curLv = idx;
@@ -328,6 +359,7 @@
             el("found").innerText = 0;
             el("message").innerText = "找出 " + levels[curLv].diffs.length + " 個不同";
             el("btnShowAll").disabled = false;
+            
             if (timer) clearInterval(timer);
             timer = setInterval(() => {
                 timeLeft--;
@@ -336,25 +368,58 @@
             }, 1000);
         }
 
+        // 🎉 通關特效函數
+        function triggerConfetti() {
+            // 發射禮炮！(使用 canvas-confetti 庫)
+            const duration = 2000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                // 兩邊噴射
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
         function endGame(win) {
             if (isOver) return;
             isOver = true;
             clearInterval(timer);
             el("message").innerText = win ? "🎉 過關！" : "時間到";
+            
             if (win) {
                 playSound("win");
+                triggerConfetti(); // 觸發彩帶特效
+                
                 setTimeout(() => {
                     if (curLv < levels.length - 1) {
                         el("levelSelect").value = curLv + 1;
                         loadLevel(curLv + 1);
                     } else {
-                        el("message").innerText = "🏆 全破關！";
+                        el("message").innerText = "🏆 全破關！太強了！";
+                        // 全破關再來一次大禮炮
+                        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
                     }
-                }, 1500);
+                }, 2500); // 延長一點時間讓特效跑完
             }
         }
 
-        // ✅ 修正版：圈圈畫在 image-inner（圖片等大的容器）上
         function mark(normX, normY) {
             const addMarker = (parent) => {
                 const m = document.createElement("div");
@@ -367,16 +432,17 @@
             addMarker(el("image-right"));
         }
 
-        // 點擊事件：掛在 wrapper，但座標用 imgRect 算（只算圖片範圍）
         const clickHandler = (e) => {
             if (isOver) return;
+            
+            // 嘗試解鎖音訊環境 (iOS 需要使用者互動後才能播放聲音)
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
             const wrapper = e.currentTarget;
             const img = wrapper.querySelector("img");
             if (!img) return;
 
             const imgRect = img.getBoundingClientRect();
-
-            // 點到圖片外就忽略
             if (
                 e.clientX < imgRect.left || e.clientX > imgRect.right ||
                 e.clientY < imgRect.top || e.clientY > imgRect.bottom
@@ -403,12 +469,10 @@
             }
         };
 
-        document
-            .querySelectorAll(".image-wrapper")
-            .forEach(w => w.addEventListener("click", clickHandler));
+        document.querySelectorAll(".image-wrapper").forEach(w => w.addEventListener("click", clickHandler));
 
         el("btnRestart").onclick = startGame;
-
+        
         el("btnShowAll").onclick = () => {
             levels[curLv].diffs.forEach((d, i) => {
                 if (!found[i]) mark(d.x, d.y);
@@ -421,14 +485,12 @@
             const lv = levels[curLv];
             el("message").innerText = "提示: " + lv.hints[hintIdx];
             hintIdx = (hintIdx + 1) % lv.diffs.length;
+            playSound("hint");
         };
 
-        el("levelSelect").onchange = (e) =>
-            loadLevel(parseInt(e.target.value, 10));
+        el("levelSelect").onchange = (e) => loadLevel(parseInt(e.target.value, 10));
 
-        // 啟動第一關
         loadLevel(0);
     </script>
 </body>
 </html>
-
