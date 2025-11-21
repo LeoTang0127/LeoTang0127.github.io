@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>安安來找大不同 </title>
+    <title>安安來找不同</title>
     <style>
         * {
             box-sizing: border-box;
@@ -288,14 +288,14 @@
 
         <div class="footer">
             <div id="message">開始遊戲</div>
-            <button id="btnMusic">音樂：OFF</button>
+            <button id="btnMusic">音樂：ON</button>
             <button id="btnHint">提示</button>
             <button id="btnRestart">重來</button>
             <button id="btnShowAll">解答</button>
         </div>
     </div>
 
-    <!-- 🎵 背景音樂 -->
+    <!-- 🎵 背景音樂（預設嘗試自動播放） -->
     <!-- 請把 bgm.mp3 放在同一資料夾，或修改 src 為你的音樂路徑 -->
     <audio id="bgm" src="bgm.mp3" loop></audio>
 
@@ -354,6 +354,9 @@
             }
         ];
 
+        // 🔧 調整：按的判定範圍放大一點（1.5 倍）
+        const HIT_SCALE = 1.5;
+
         let curLv = 0,
             found = [],
             timeLeft = 120,
@@ -367,27 +370,53 @@
         const btnMusic = el("btnMusic");
         const winOverlay = el("winOverlay");
         const winText = el("winText");
-        let bgmOn = false;
+        let bgmOn = true;      // 預設開啟
+        let bgmStarted = false;
 
-        // 簡單切換 BGM
+        // 嘗試播放 BGM（考慮瀏覽器限制）
+        function tryPlayBgm() {
+            if (!bgm || bgmStarted === true) return;
+            bgm.play().then(() => {
+                bgmStarted = true;
+                bgmOn = true;
+                btnMusic.textContent = "音樂：ON";
+            }).catch(() => {
+                // 被瀏覽器擋住，就先顯示 OFF，等使用者再按
+                bgmOn = false;
+                bgmStarted = false;
+                btnMusic.textContent = "音樂：OFF";
+            });
+        }
+
+        // 載入完成先試一次
+        window.addEventListener("load", () => {
+            tryPlayBgm();
+        });
+
+        // 第一次點擊 / 觸碰畫面時再試一次（for iOS / Chrome 限制）
+        document.addEventListener("click", () => { tryPlayBgm(); }, { once: true });
+        document.addEventListener("touchstart", () => { tryPlayBgm(); }, { once: true });
+
+        // 音樂按鈕：手動開關
         btnMusic.addEventListener("click", async () => {
             if (!bgm) return;
-            try {
-                if (!bgmOn) {
+            if (!bgmOn) {
+                try {
                     await bgm.play();
                     bgmOn = true;
+                    bgmStarted = true;
                     btnMusic.textContent = "音樂：ON";
-                } else {
-                    bgm.pause();
-                    bgmOn = false;
-                    btnMusic.textContent = "音樂：OFF";
+                } catch (e) {
+                    console.log("BGM 播放失敗:", e);
                 }
-            } catch (e) {
-                console.log("BGM 播放失敗:", e);
+            } else {
+                bgm.pause();
+                bgmOn = false;
+                btnMusic.textContent = "音樂：OFF";
             }
         });
 
-        // 音效
+        // 小音效
         const playSound = (type) => {
             const AC = window.AudioContext || window.webkitAudioContext;
             if (!AC) return;
@@ -412,7 +441,6 @@
             el("total").innerText = lv.diffs.length;
             found = lv.diffs.map(() => false);
             hintIdx = 0;
-            // 關閉通關特效
             winOverlay.classList.remove("show");
             startGame();
         }
@@ -441,7 +469,6 @@
                 el("message").innerText = "🎉 過關！";
                 playSound("win");
 
-                // 顯示通關特效
                 if (curLv < levels.length - 1) {
                     winText.textContent = "通關！";
                 } else {
@@ -449,7 +476,6 @@
                 }
                 winOverlay.classList.add("show");
 
-                // 1.5 秒後自動跳下一關或顯示全破
                 setTimeout(() => {
                     if (curLv < levels.length - 1) {
                         el("levelSelect").value = curLv + 1;
@@ -495,7 +521,8 @@
 
             let hit = -1;
             levels[curLv].diffs.forEach((d, i) => {
-                if (!found[i] && Math.hypot(nx - d.x, ny - d.y) < d.r) {
+                // 🔧 判定範圍放大：r * HIT_SCALE
+                if (!found[i] && Math.hypot(nx - d.x, ny - d.y) < d.r * HIT_SCALE) {
                     hit = i;
                 }
             });
@@ -549,3 +576,4 @@
     </script>
 </body>
 </html>
+
