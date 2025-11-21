@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>找不同小遊戲（三關＋提示版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>找不同小遊戲（手機修復版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,6 +17,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* 確保手機上如果有內容溢出可以捲動 */
+            overflow-x: hidden; 
         }
 
         .game-container {
@@ -26,6 +28,8 @@
             box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
             max-width: 920px;
             width: 100%;
+            /* 加上過場動畫讓切換順暢 */
+            transition: all 0.3s ease;
         }
 
         .header {
@@ -42,6 +46,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap; /* 允許標題過長時換行 */
         }
 
         .pill {
@@ -49,6 +54,7 @@
             border-radius: 999px;
             background: #fff7d1;
             font-size: 14px;
+            white-space: nowrap;
         }
 
         .stats {
@@ -59,22 +65,23 @@
             justify-content: flex-end;
         }
 
-            .stats span {
-                padding: 4px 10px;
-                border-radius: 999px;
-                background: #f3f6ff;
-                display: flex;
-                align-items: center;
-                gap: 4px;
-            }
+        .stats span {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #f3f6ff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
 
-            .stats select {
-                border: none;
-                background: transparent;
-                font-size: 13px;
-                outline: none;
-                cursor: pointer;
-            }
+        .stats select {
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
 
         .board {
             margin-top: 8px;
@@ -89,18 +96,25 @@
             border-radius: 16px;
             overflow: hidden;
             border: 2px solid #f0e2ff;
-            min-height: 260px;
+            /* 電腦版保留最小高度，避免沒圖時塌陷 */
+            min-height: 260px; 
+            display: flex;       /* 讓圖片置中 */
+            justify-content: center;
+            align-items: flex-start;
         }
 
         .image-inner {
             position: relative;
-            display: inline-block; /* 跟裡面的 img 一樣大 */
+            /* 關鍵：這裡不能設固定寬高，要隨圖片撐開 */
+            width: 100%; 
+            line-height: 0; /* 消除圖片下方的空白間隙 */
         }
 
         .game-img {
             display: block;
-            max-width: 100%;
-            height: auto;
+            width: 100%;      /* 寬度佔滿容器 */
+            height: auto;     /* 高度自動，保持比例 */
+            object-fit: contain; /* 確保圖片完整顯示 */
         }
 
         .image-label {
@@ -111,6 +125,8 @@
             border-radius: 999px;
             background: #ffffffdd;
             font-size: 13px;
+            pointer-events: none; /* 避免擋住點擊 */
+            z-index: 10;
         }
 
         .marker {
@@ -123,47 +139,37 @@
             pointer-events: none;
             transform: translate(-50%, -50%);
             animation: pop 0.2s ease-out;
+            z-index: 20;
         }
 
         @keyframes pop {
-            from {
-                transform: translate(-50%, -50%) scale(0.7);
-                opacity: 0;
-            }
-
-            to {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
-            }
+            from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
 
-        /* 點對時，小小閃光特效 */
         .image-wrapper.hit {
             animation: hitFlash 0.25s ease-out;
         }
 
         @keyframes hitFlash {
-            from {
-                box-shadow: 0 0 0 0 rgba(255, 183, 197, 0.8);
-            }
-
-            to {
-                box-shadow: 0 0 0 14px rgba(255, 183, 197, 0);
-            }
+            from { box-shadow: 0 0 0 0 rgba(255, 183, 197, 0.8); }
+            to { box-shadow: 0 0 0 14px rgba(255, 183, 197, 0); }
         }
 
         .footer {
-            margin-top: 10px;
+            margin-top: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 14px;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .message {
             min-height: 22px;
             font-weight: 500;
+            flex: 1;
         }
 
         .btn-row {
@@ -176,115 +182,124 @@
         button {
             border: none;
             border-radius: 999px;
-            padding: 6px 12px;
+            padding: 8px 16px;
             font-size: 13px;
             cursor: pointer;
             background: #ffd8e8;
+            transition: background 0.2s;
         }
 
-            button.secondary {
-                background: #e7f5ff;
-            }
+        button:active {
+            transform: scale(0.95);
+        }
 
-            button:disabled {
-                opacity: 0.6;
-                cursor: default;
-            }
+        button.secondary {
+            background: #e7f5ff;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
 
         select#langSelect {
             border-radius: 999px;
             border: none;
             background: #f3f6ff;
-            padding: 4px 8px;
+            padding: 6px 12px;
             font-size: 13px;
             cursor: pointer;
         }
 
-/* 手機版排版：卡片撐滿整個螢幕，不再像一張小卡片 */
-@media (max-width: 768px) {
-    body {
-        margin: 0;
-        min-height: 100vh;
-        display: block;          /* ❗ 取消 flex 置中，改成一般直排 */
-    }
+        /* === 手機版排版修正 === */
+        @media (max-width: 768px) {
+            body {
+                display: block; /* 取消 flex 置中，讓頁面自然流動 */
+                height: auto;
+                padding: 10px; /* 給邊邊一點留白 */
+            }
 
-    .game-container {
-        max-width: 100%;
-        width: 100%;
-        height: 100vh;           /* 盡量佔滿整個螢幕高度 */
-        margin: 0;
-        border-radius: 0;        /* 拿掉圓角，邊緣就不會露出粉紅背景 */
-        box-shadow: none;        /* 拿掉陰影，看起來就像整個畫面就是遊戲 */
-        padding: 8px 4px 10px;   /* 把內距稍微縮小，讓圖片更大一點 */
-    }
+            .game-container {
+                height: auto;      /* ❗重要：取消固定高度，隨內容長高 */
+                min-height: auto;  /* 取消 min-height */
+                padding: 12px;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* 手機上保留一點陰影 */
+            }
 
-    .board {
-        grid-template-columns: 1fr 1fr;  /* 手機直立也保持左右兩張圖 */
-        gap: 6px;
-        margin-top: 4px;
-    }
+            .board {
+                /* ❗重要：手機改為上下排列 (1欄) */
+                grid-template-columns: 1fr; 
+                gap: 15px;
+            }
 
-    .header {
-        margin-bottom: 6px;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
+            .image-wrapper {
+                min-height: auto; /* 手機版不強制最小高度，依照圖片比例 */
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
 
-    .title {
-        font-size: 18px;
-    }
+            .title {
+                font-size: 18px;
+                width: 100%;
+                justify-content: space-between; /* 讓標題跟 Pill 分開 */
+            }
 
-    .stats {
-        width: 100%;
-        justify-content: space-between;
-        font-size: 11px;
-        gap: 4px;
-    }
+            .stats {
+                width: 100%;
+                justify-content: space-between; /* 資訊分散對齊 */
+                background: #f8f9fa;
+                padding: 8px;
+                border-radius: 8px;
+            }
 
-    .stats span {
-        padding: 2px 6px;
-    }
+            .stats span {
+                background: transparent;
+                padding: 0;
+                font-size: 12px;
+            }
 
-    .footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-        font-size: 12px;
-    }
+            .footer {
+                flex-direction: column;
+                align-items: stretch; /* 按鈕滿版 */
+                gap: 12px;
+            }
 
-    .btn-row {
-        width: 100%;
-        justify-content: flex-end;
-        gap: 4px;
-    }
+            .message {
+                text-align: center;
+                background: #fff0f5;
+                padding: 8px;
+                border-radius: 8px;
+            }
 
-    button {
-        padding: 4px 8px;
-        font-size: 11px;
-    }
-
-    select#langSelect {
-        font-size: 11px;
-        padding: 3px 6px;
-    }
-}
-
-
+            .btn-row {
+                justify-content: space-between;
+            }
+            
+            .btn-row button, .btn-row select {
+                flex: 1; /* 按鈕平均分配寬度 */
+                text-align: center;
+                padding: 10px 0; /* 增加手機點擊區域 */
+            }
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
         <div class="header">
             <div class="title">
-                🌟 找不同小遊戲
-                <span class="pill" id="levelName">關卡 1：熊熊森林</span>
+                <span>🌟 找不同</span>
+                <span class="pill" id="levelName">關卡 1</span>
             </div>
             <div class="stats">
-                <span>⏱ 剩餘時間：<strong id="time">120</strong>s</span>
-                <span>✅ 已找到：<strong id="found">0</strong> / <span id="total">5</span></span>
+                <span>⏱ <strong id="time">120</strong>s</span>
+                <span>✅ <strong id="found">0</strong>/<span id="total">5</span></span>
                 <span>
-                    關卡：
+                    關卡:
                     <select id="levelSelect">
                         <option value="0">1</option>
                         <option value="1">2</option>
@@ -295,7 +310,6 @@
         </div>
 
         <div class="board">
-            <!-- 左邊：原圖 -->
             <div class="image-wrapper">
                 <div class="image-inner" id="image-left">
                     <img id="image-left-img" class="game-img" alt="原圖">
@@ -303,11 +317,10 @@
                 </div>
             </div>
 
-            <!-- 右邊：修改版 -->
             <div class="image-wrapper">
                 <div class="image-inner" id="image-right">
                     <img id="image-right-img" class="game-img" alt="修改版">
-                    <span class="image-label" id="labelRight">找出 5 個不同的地方</span>
+                    <span class="image-label" id="labelRight">點擊不同處</span>
                 </div>
             </div>
         </div>
@@ -316,19 +329,18 @@
             <div class="message" id="message"></div>
             <div class="btn-row">
                 <select id="langSelect">
-                    <option value="zh">提示：中文</option>
-                    <option value="en">Hint: English</option>
+                    <option value="zh">提示:中</option>
+                    <option value="en">Hint:En</option>
                 </select>
-                <button id="btnHint" class="secondary">顯示提示</button>
-                <button id="btnRestart">重新開始</button>
-                <button id="btnShowAll" class="secondary">顯示答案</button>
+                <button id="btnHint" class="secondary">提示</button>
+                <button id="btnRestart">重來</button>
+                <button id="btnShowAll" class="secondary">解答</button>
             </div>
         </div>
     </div>
 
     <script>
         // === 三個關卡設定 ===
-
         const levels = [
             // ＝＝＝ 第 1 關：小熊森林 ＝＝＝
             {
@@ -337,44 +349,13 @@
                 originalImage: "S__52166671.jpg",
                 diffImage: "S__52166671_1.png",
                 differences: [
-                    {
-                        x: 0.5675,
-                        y: 0.3207,
-                        radius: 0.0859,
-                        hintZh: "小熊舉起的那隻手變成紫色手套。",
-                        hintEn: "The bear’s raised hand is purple."
-                    },
-                    {
-                        x: 0.4029,
-                        y: 0.2252,
-                        radius: 0.0859,
-                        hintZh: "小熊帽子上多了一顆小星星。",
-                        hintEn: "There is a little star on the bear’s hat."
-                    },
-                    {
-                        x: 0.7622,
-                        y: 0.2259,
-                        radius: 0.0859,
-                        hintZh: "氣球棒頂端被塗黑一小塊。",
-                        hintEn: "The tip of the balloon stick is black."
-                    },
-                    {
-                        x: 0.2641,
-                        y: 0.9150,
-                        radius: 0.0859,
-                        hintZh: "左腳鞋子多了一條紅色鞋帶。",
-                        hintEn: "There is a red shoelace on her left shoe."
-                    },
-                    {
-                        x: 0.4716,
-                        y: 0.8720,
-                        radius: 0.0859,
-                        hintZh: "最左邊那根木頭圍欄不見了或變短。",
-                        hintEn: "One wooden fence post on the left is missing."
-                    }
+                    { x: 0.5675, y: 0.3207, radius: 0.0859, hintZh: "小熊舉起的那隻手變成紫色手套。", hintEn: "The bear’s raised hand is purple." },
+                    { x: 0.4029, y: 0.2252, radius: 0.0859, hintZh: "小熊帽子上多了一顆小星星。", hintEn: "There is a little star on the bear’s hat." },
+                    { x: 0.7622, y: 0.2259, radius: 0.0859, hintZh: "氣球棒頂端被塗黑一小塊。", hintEn: "The tip of the balloon stick is black." },
+                    { x: 0.2641, y: 0.9150, radius: 0.0859, hintZh: "左腳鞋子多了一條紅色鞋帶。", hintEn: "There is a red shoelace on her left shoe." },
+                    { x: 0.4716, y: 0.8720, radius: 0.0859, hintZh: "最左邊那根木頭圍欄不見了或變短。", hintEn: "One wooden fence post on the left is missing." }
                 ]
             },
-
             // ＝＝＝ 第 2 關：室內 Kuromi 雕像 ＝＝＝
             {
                 id: 2,
@@ -382,44 +363,13 @@
                 originalImage: "S__52166670.jpg",
                 diffImage: "S__52166670_1.jpg",
                 differences: [
-                    {
-                        x: 0.4018,
-                        y: 0.8750,
-                        radius: 0.0938,
-                        hintZh: "牛仔外套左邊胸前的扣子少了一顆。",
-                        hintEn: "One button on her denim jacket is gone."
-                    },
-                    {
-                        x: 0.6096,
-                        y: 0.8584,
-                        radius: 0.0938,
-                        hintZh: "她腳邊地板的亮點變暗了。",
-                        hintEn: "The light spot on the floor near her feet is darker."
-                    },
-                    {
-                        x: 0.6940,
-                        y: 0.2920,
-                        radius: 0.0938,
-                        hintZh: "黑色雕像右眼的線條變粗或變得不一樣。",
-                        hintEn: "The outline of Kuromi’s right eye is different."
-                    },
-                    {
-                        x: 0.5612,
-                        y: 0.0254,
-                        radius: 0.0938,
-                        hintZh: "她頭旁邊背景的一條白色漫畫線消失了。",
-                        hintEn: "A white speech bubble line in the background is missing."
-                    },
-                    {
-                        x: 0.6175,
-                        y: 0.1641,
-                        radius: 0.0938,
-                        hintZh: "她右邊的髮圈多了一個小紅點。",
-                        hintEn: "There is a small red dot on her hair tie."
-                    }
+                    { x: 0.4018, y: 0.8750, radius: 0.0938, hintZh: "牛仔外套左邊胸前的扣子少了一顆。", hintEn: "One button on her denim jacket is gone." },
+                    { x: 0.6096, y: 0.8584, radius: 0.0938, hintZh: "她腳邊地板的亮點變暗了。", hintEn: "The light spot on the floor near her feet is darker." },
+                    { x: 0.6940, y: 0.2920, radius: 0.0938, hintZh: "黑色雕像右眼的線條變粗或變得不一樣。", hintEn: "The outline of Kuromi’s right eye is different." },
+                    { x: 0.5612, y: 0.0254, radius: 0.0938, hintZh: "她頭旁邊背景的一條白色漫畫線消失了。", hintEn: "A white speech bubble line in the background is missing." },
+                    { x: 0.6175, y: 0.1641, radius: 0.0938, hintZh: "她右邊的髮圈多了一個小紅點。", hintEn: "There is a small red dot on her hair tie." }
                 ]
             },
-
             // ＝＝＝ 第 3 關：洗車場 ＝＝＝
             {
                 id: 3,
@@ -427,41 +377,11 @@
                 originalImage: "S__52166669.jpg",
                 diffImage: "S__52166669_1.jpg",
                 differences: [
-                    {
-                        x: 0.1066,
-                        y: 0.3928,
-                        radius: 0.0859,
-                        hintZh: "車頭燈裡面少了一個小反光點。",
-                        hintEn: "One reflection inside the headlight is gone."
-                    },
-                    {
-                        x: 0.3843,
-                        y: 0.3627,
-                        radius: 0.0859,
-                        hintZh: "車窗下面多了一條很細的黑色線。",
-                        hintEn: "There is a new thin black line under the car window."
-                    },
-                    {
-                        x: 0.5088,
-                        y: 0.9112,
-                        radius: 0.0859,
-                        hintZh: "她腳邊地上的一小塊泡泡不見了。",
-                        hintEn: "Some foam on the ground near her feet is gone."
-                    },
-                    {
-                        x: 0.6434,
-                        y: 0.0590,
-                        radius: 0.0859,
-                        hintZh: "前檔風玻璃或車頭燈的反光跟原本不一樣。",
-                        hintEn: "The reflection on the windshield or headlight is different."
-                    },
-                    {
-                        x: 0.2941,
-                        y: 0.5997,
-                        radius: 0.0859,
-                        hintZh: "她手上的洗車海綿顏色變得比較淡。",
-                        hintEn: "The sponge in her hand is a lighter color."
-                    }
+                    { x: 0.1066, y: 0.3928, radius: 0.0859, hintZh: "車頭燈裡面少了一個小反光點。", hintEn: "One reflection inside the headlight is gone." },
+                    { x: 0.3843, y: 0.3627, radius: 0.0859, hintZh: "車窗下面多了一條很細的黑色線。", hintEn: "There is a new thin black line under the car window." },
+                    { x: 0.5088, y: 0.9112, radius: 0.0859, hintZh: "她腳邊地上的一小塊泡泡不見了。", hintEn: "Some foam on the ground near her feet is gone." },
+                    { x: 0.6434, y: 0.0590, radius: 0.0859, hintZh: "前檔風玻璃或車頭燈的反光跟原本不一樣。", hintEn: "The reflection on the windshield or headlight is different." },
+                    { x: 0.2941, y: 0.5997, radius: 0.0859, hintZh: "她手上的洗車海綿顏色變得比較淡。", hintEn: "The sponge in her hand is a lighter color." }
                 ]
             }
         ];
@@ -489,13 +409,13 @@
         let currentLevelIndex = 0;
         let differences = [];
         let foundFlags = [];
-        let timeLimit = 120;   // ★ 改成 2 分鐘
+        let timeLimit = 120;
         let timeLeft = timeLimit;
         let timerId = null;
         let gameOver = false;
         let currentHintIndex = 0;
 
-        // --- 簡單可愛音效：用 Web Audio 產生小蜜蜂聲 ---
+        // --- 音效設定 ---
         let audioCtx = null;
 
         function getAudioCtx() {
@@ -524,13 +444,11 @@
         }
 
         function playCorrectSound() {
-            // 小小「叮噹」聲
             playBeep(880, 0.12, "sine", 0.25, 0);
             playBeep(1320, 0.14, "sine", 0.22, 0.08);
         }
 
         function playWinSound() {
-            // 過關「上升三音」
             playBeep(880, 0.18, "triangle", 0.26, 0);
             playBeep(1175, 0.18, "triangle", 0.24, 0.16);
             playBeep(1568, 0.24, "triangle", 0.22, 0.32);
@@ -544,18 +462,17 @@
             rightImg.src = level.diffImage;
             levelNameEl.textContent = level.titleZh;
             labelLeft.textContent = "原圖";
-            labelRight.textContent = "找出 5 個不同的地方";
+            labelRight.textContent = "請點擊不同處";
 
             differences = level.differences;
             totalEl.textContent = differences.length.toString();
 
             currentHintIndex = 0;
-            msgEl.textContent = "先自己找找看～需要幫忙可以按「顯示提示」。";
+            msgEl.textContent = "遊戲開始！請找出 " + differences.length + " 個不同之處。";
             startGame();
         }
 
         function startGame() {
-            // 清除舊標記
             [...document.querySelectorAll(".marker")].forEach(el => el.remove());
             imageRight.classList.remove("hit");
 
@@ -588,8 +505,6 @@
             if (isWin) {
                 msgEl.textContent = "🎉 太厲害了！全部都找到囉～";
                 playWinSound();
-
-                // 1.5 秒後自動進入下一關（最後一關就顯示全部通關）
                 setTimeout(() => {
                     if (currentLevelIndex < levels.length - 1) {
                         const nextIndex = currentLevelIndex + 1;
@@ -613,8 +528,12 @@
         }
 
         function handleClick(e) {
+            // 為了讓手機點擊更順暢，先嘗試啟動 AudioContext (手機瀏覽器限制)
+            if(!audioCtx) getAudioCtx();
+
             if (gameOver) return;
 
+            // 注意：改為上下排列後，getBoundingClientRect() 依然能抓到正確的寬高，座標計算邏輯不用變
             const rect = imageRight.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const clickY = e.clientY - rect.top;
@@ -626,8 +545,11 @@
 
             differences.forEach((diff, index) => {
                 if (foundFlags[index]) return;
+                // 這裡做一點小修正：如果圖片被拉長或變大，判斷距離的寬容度可以稍微調整
+                // 這裡維持原樣，因為 radius 是正規化後的比例
                 const dx = normX - diff.x;
                 const dy = normY - diff.y;
+                // 針對長寬比不同，可考慮各自加權，但簡單版直接算歐式距離即可
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 if (distance <= diff.radius) {
                     hitIndex = index;
@@ -636,7 +558,6 @@
 
             if (hitIndex >= 0) {
                 foundFlags[hitIndex] = true;
-
                 const diff = differences[hitIndex];
                 addMarker(imageRight, diff.x, diff.y);
                 addMarker(imageLeft, diff.x, diff.y);
@@ -646,9 +567,8 @@
                 msgEl.textContent = "✅ 找到了一個！";
                 playCorrectSound();
 
-                // 小閃光特效
                 imageRight.classList.remove("hit");
-                void imageRight.offsetWidth; // 強制 reflow 讓動畫可以重播
+                void imageRight.offsetWidth; 
                 imageRight.classList.add("hit");
 
                 if (foundCount === differences.length) {
@@ -697,11 +617,7 @@
             loadLevel(idx);
         });
 
-        // 一開始載入第一關
         loadLevel(0);
     </script>
 </body>
 </html>
-
-
-
